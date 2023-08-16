@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import Zip
+//import Zip
 
 enum Platform {
     
@@ -98,10 +98,10 @@ struct IPA: File {
     
     init(with location: FileLocation) throws {
         let unzipRootURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent(UUID().uuidString, conformingTo: .folder)
-        Zip.addCustomFileExtension("ipa")
-        try Zip.unzipFile(location.fileURL, destination: unzipRootURL, overwrite: true, password: nil, progress: { (progress) -> () in
-            // TODO: progress
-        })
+//        Zip.addCustomFileExtension("ipa")
+//        try Zip.unzipFile(location.fileURL, destination: unzipRootURL, overwrite: true, password: nil, progress: { (progress) -> () in
+//            // TODO: progress
+//        })
         
         let bundleURL = try IPA.findBundle(in: unzipRootURL)
         self.infoPlist = try InfoPlist(bundleURL: bundleURL)

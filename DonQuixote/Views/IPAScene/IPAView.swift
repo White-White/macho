@@ -18,7 +18,7 @@ struct IPAView: DocumentView {
     
     var body: some View {
         Button("Start Faking") {
-            try! Faking.run(for: ipa)
+//            try! Faking.run(for: ipa)
         }
     }
     

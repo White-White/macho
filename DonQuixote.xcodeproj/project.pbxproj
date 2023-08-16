@@ -83,10 +83,6 @@
 		1FAEE8D32A84BE6900472AE0 /* DocumentWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAEE8D22A84BE6900472AE0 /* DocumentWindow.swift */; };
 		1FAEE8D52A84BFB500472AE0 /* MachoItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAEE8D42A84BFB500472AE0 /* MachoItemView.swift */; };
 		1FAEE8D82A84C1E700472AE0 /* MachoContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAEE8D72A84C1E700472AE0 /* MachoContainerView.swift */; };
-		1FD8A8992A48276B00F2AECB /* Zip in Frameworks */ = {isa = PBXBuildFile; productRef = 1FD8A8982A48276B00F2AECB /* Zip */; };
-		1FD8A89C2A496A2400F2AECB /* XcodeGenKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1FD8A89B2A496A2400F2AECB /* XcodeGenKit */; };
-		1FD8A89E2A496AD600F2AECB /* Faking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FD8A89D2A496AD600F2AECB /* Faking.swift */; };
-		1FD8A8A02A49714700F2AECB /* ProjectExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FD8A89F2A49714700F2AECB /* ProjectExtension.swift */; };
 		1FD8A9842A78D4DA00F2AECB /* FatBinaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FD8A9832A78D4DA00F2AECB /* FatBinaryView.swift */; };
 		1FD8A9862A78D5F600F2AECB /* DocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FD8A9852A78D5F600F2AECB /* DocumentView.swift */; };
 		1FD8A9A22A790A6400F2AECB /* FileHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FD8A9A12A790A6400F2AECB /* FileHandle.swift */; };
@@ -380,8 +376,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1FD8A89C2A496A2400F2AECB /* XcodeGenKit in Frameworks */,
-				1FD8A8992A48276B00F2AECB /* Zip in Frameworks */,
 				1F8076CB2A36001700012724 /* libcapstone.a in Frameworks */,
 				1F8076D12A36007800012724 /* HexFiend.framework in Frameworks */,
 			);
@@ -700,8 +694,6 @@
 			);
 			name = DonQuixote;
 			packageProductDependencies = (
-				1FD8A8982A48276B00F2AECB /* Zip */,
-				1FD8A89B2A496A2400F2AECB /* XcodeGenKit */,
 			);
 			productName = DonQuixote;
 			productReference = 1F8074862A330E8B00012724 /* DonQuixote.app */;
@@ -732,8 +724,6 @@
 			);
 			mainGroup = 1F80747D2A330E8A00012724;
 			packageReferences = (
-				1FD8A8972A48276B00F2AECB /* XCRemoteSwiftPackageReference "Zip" */,
-				1FD8A89A2A496A2400F2AECB /* XCRemoteSwiftPackageReference "XcodeGen" */,
 			);
 			productRefGroup = 1F8074872A330E8B00012724 /* Products */;
 			projectDirPath = "";
@@ -970,7 +960,6 @@
 				1F8076912A331EA800012724 /* InstructionSection.swift in Sources */,
 				1F8076A22A331EC200012724 /* SymbolTableEntry.swift in Sources */,
 				1F8076C32A358C6400012724 /* UStringSection.swift in Sources */,
-				1FD8A89E2A496AD600F2AECB /* Faking.swift in Sources */,
 				1F80769F2A331EB100012724 /* MachoBaseElement.swift in Sources */,
 				1F80767A2A331E5F00012724 /* ComponentListView.swift in Sources */,
 				1F8076792A331E4F00012724 /* MachoView.swift in Sources */,
@@ -991,7 +980,6 @@
 				1F80769E2A331EB100012724 /* PointerComponent.swift in Sources */,
 				1F80749C2A33105900012724 /* File.swift in Sources */,
 				1F8076B22A331F2100012724 /* Demangle.swift in Sources */,
-				1FD8A8A02A49714700F2AECB /* ProjectExtension.swift in Sources */,
 				1F8076942A331EAC00012724 /* OperationCodeSection.swift in Sources */,
 				1F8076AF2A331F1F00012724 /* TickTock.swift in Sources */,
 				1F181CE12A4822BD0014B9D6 /* IPA.swift in Sources */,
@@ -1228,38 +1216,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		1FD8A8972A48276B00F2AECB /* XCRemoteSwiftPackageReference "Zip" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/marmelroy/Zip.git";
-			requirement = {
-				kind = upToNextMinorVersion;
-				minimumVersion = 2.1.0;
-			};
-		};
-		1FD8A89A2A496A2400F2AECB /* XCRemoteSwiftPackageReference "XcodeGen" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/yonaskolb/XcodeGen.git";
-			requirement = {
-				kind = upToNextMinorVersion;
-				minimumVersion = 2.35.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		1FD8A8982A48276B00F2AECB /* Zip */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1FD8A8972A48276B00F2AECB /* XCRemoteSwiftPackageReference "Zip" */;
-			productName = Zip;
-		};
-		1FD8A89B2A496A2400F2AECB /* XcodeGenKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1FD8A89A2A496A2400F2AECB /* XCRemoteSwiftPackageReference "XcodeGen" */;
-			productName = XcodeGenKit;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1F80747E2A330E8A00012724 /* Project object */;
 }
