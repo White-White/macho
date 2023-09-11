@@ -184,7 +184,7 @@ enum LoadCommandType: UInt32 {
     }
 }
 
-class LoadCommand: MachoBaseElement {
+class LoadCommand: GroupTranslatedMachoSlice {
     
     let type: LoadCommandType
     
@@ -193,13 +193,17 @@ class LoadCommand: MachoBaseElement {
         super.init(data, title: title ?? type.name, subTitle: subTitle)
     }
     
-    override func loadTranslations() async {
-        let typeTranslation = Translation(definition: "Load Command Type", humanReadable: type.name, translationType: .numberEnum32Bit)
-        let sizeTranslation = Translation(definition: "Load Command Size", humanReadable: data.count.hex, translationType: .uint32)
-        await self.save(translations: [typeTranslation, sizeTranslation] + self.commandTranslations)
+    override func translate() async -> [TranslationGroup] {
+        let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
+        translationGroup.addTranslation(definition: "Load Command Type", humanReadable: type.name, translationType: .numberEnum32Bit)
+        translationGroup.addTranslation(definition: "Load Command Size", humanReadable: data.count.hex, translationType: .uint32)
+        self.addCommandTranslation(to: translationGroup)
+        return [translationGroup]
     }
-    
-    var commandTranslations: [Translation] { [] }
+
+    func addCommandTranslation(to translationGroup: TranslationGroup) {
+        
+    }
 
     static func loadCommands(from machoData: Data,
                              machoHeader: MachoHeader,

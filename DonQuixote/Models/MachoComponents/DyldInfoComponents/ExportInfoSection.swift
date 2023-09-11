@@ -101,43 +101,43 @@ class ExportInfoNode {
         self.edges = edges
     }
     
-    var translations: [Translation] {
+    var translationGrouup: TranslationGroup {
+        let translationGroup = TranslationGroup(dataStartIndex: self.startOffsetInMacho)
         
-        var transIations: [Translation] = []
-        
-        transIations.append(Translation(definition: "Terminal Size", humanReadable: "\(terminalSize.rawValue)",
+        translationGroup.addTranslation(definition: "Terminal Size", humanReadable: "\(terminalSize.rawValue)",
                                         translationType: .uleb(terminalSize.byteCount),
-                                        extraDefinition: "Trie Node Name Prefix", extraHumanReadable: accumulatedString))
+                                        extraDefinition: "Trie Node Name Prefix", extraHumanReadable: accumulatedString)
         
         if let flags = flags,
             let leb128Array = leb128Array {
             
-            transIations.append(Translation(definition: "Kind", humanReadable: flags.kind.readable,
+            translationGroup.addTranslation(definition: "Kind", humanReadable: flags.kind.readable,
                                             translationType: .uleb(flags.byteCount),
-                                            extraDefinition: "Flags", extraHumanReadable: flags.flagsDescription))
+                                            extraDefinition: "Flags", extraHumanReadable: flags.flagsDescription)
             
             for leb in leb128Array {
-                transIations.append(Translation(definition: "LEB", humanReadable: leb.rawValue.hex, translationType: .uleb(leb.byteCount)))
+                translationGroup.addTranslation(definition: "LEB", humanReadable: leb.rawValue.hex, translationType: .uleb(leb.byteCount))
             }
             
             if let reExportedSymbolName = reExportedSymbolName {
-                transIations.append(Translation(definition: "ReExported Symbol Name", humanReadable: reExportedSymbolName.rawValue, translationType: .utf8String(reExportedSymbolName.byteCount)))
+                translationGroup.addTranslation(definition: "ReExported Symbol Name", humanReadable: reExportedSymbolName.rawValue, translationType: .utf8String(reExportedSymbolName.byteCount))
             }
         }
         
-        transIations.append(Translation(definition: "Number of Edges", humanReadable: "\(edgesCount.rawValue)", translationType: .uleb(edgesCount.byteCount)))
+        translationGroup.addTranslation(definition: "Number of Edges", humanReadable: "\(edgesCount.rawValue)", translationType: .uleb(edgesCount.byteCount))
         
         
         for edge in self.edges {
-            transIations.append(Translation(definition: "Edge Name", humanReadable: edge.edgeName.rawValue, translationType: .utf8String(edge.edgeName.byteCount)))
-            transIations.append(Translation(definition: "Edge Offset", humanReadable: edge.offset.rawValue.hex, translationType: .uleb(edge.offset.byteCount)))
+            translationGroup.addTranslation(definition: "Edge Name", humanReadable: edge.edgeName.rawValue, translationType: .utf8String(edge.edgeName.byteCount))
+            translationGroup.addTranslation(definition: "Edge Offset", humanReadable: edge.offset.rawValue.hex, translationType: .uleb(edge.offset.byteCount))
         }
         
-        return transIations
+        return translationGroup
     }
+    
 }
 
-class ExportInfoSection: MachoBaseElement {
+class ExportInfoSection: GroupTranslatedMachoSlice {
     
     private(set) var exportInfoNodes: [ExportInfoNode] = []
     let is64Bit: Bool
@@ -147,12 +147,13 @@ class ExportInfoSection: MachoBaseElement {
         super.init(data, title: title, subTitle: nil)
     }
     
-    override func loadTranslations() async {
+    override func initialize() async {
         let root = ExportInfoSection.generateNode(from: data, for: nil, parentNode: nil)
         self.exportInfoNodes = ExportInfoSection.allNodes(from: root, in: data).sorted { $0.startOffsetInMacho < $1.startOffsetInMacho }
-        for exportInfoNode in exportInfoNodes {
-            await self.save(translations: exportInfoNode.translations)
-        }
+    }
+    
+    override func translate() async -> [TranslationGroup] {
+        return self.exportInfoNodes.map { $0.translationGrouup }
     }
     
     private static func allNodes(from root: ExportInfoNode, in data: Data) -> [ExportInfoNode] {

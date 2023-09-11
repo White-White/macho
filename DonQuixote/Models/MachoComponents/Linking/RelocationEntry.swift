@@ -22,6 +22,7 @@ struct RelocationEntry {
     
     static let entrySize: Int = 8
     
+    let dataStartIndex: Int
     let address: UInt32
     let symbolNum: UInt32
     let pcRelocated: Bool
@@ -31,6 +32,8 @@ struct RelocationEntry {
     let sectionName: String
     
     init(with data: Data, sectionName: String) {
+        self.dataStartIndex = data.startIndex
+        
         self.address = data.subSequence(from: .zero, count: Straddle.doubleWords.raw).UInt32
         self.symbolNum = (data.subSequence(from: 4, count: 3) + [UInt8(0)]).UInt32
         
@@ -51,12 +54,12 @@ struct RelocationEntry {
         self.sectionName = sectionName
     }
     
-    var translations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "Address", humanReadable: self.address.hex, translationType: .uint32))
-        translations.append(Translation(definition: "SymbolNum", humanReadable: self.symbolNum.hex, translationType: .rawData(3)))
-        translations.append(Translation(definition: "extra", humanReadable: "pcRelocated: \(self.pcRelocated), length: \(self.length), isExternal: \(self.isExternal), type: \(self.type)", translationType: .flags(1)))
-        return translations
+    var translationGroup: TranslationGroup {
+        let translationGroup = TranslationGroup(dataStartIndex: self.dataStartIndex)
+        translationGroup.addTranslation(definition: "Address", humanReadable: self.address.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "SymbolNum", humanReadable: self.symbolNum.hex, translationType: .rawData(3))
+        translationGroup.addTranslation(definition: "extra", humanReadable: "pcRelocated: \(self.pcRelocated), length: \(self.length), isExternal: \(self.isExternal), type: \(self.type)", translationType: .flags(1))
+        return translationGroup
     }
     
 }

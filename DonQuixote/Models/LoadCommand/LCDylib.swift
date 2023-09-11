@@ -28,14 +28,12 @@ class LCDylib: LoadCommand {
         super.init(data, type: type, title: type.name, subTitle: libPath.components(separatedBy: "/").last)
     }
     
-    override var commandTranslations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "Path Offset", humanReadable: "\(self.libPathOffset)", translationType: .uint32))
-        translations.append(Translation(definition: "Build Time", humanReadable: "\(self.timestamp)", translationType: .uint32))
-        translations.append(Translation(definition: "Version", humanReadable: self.currentVersion, translationType: .versionString32Bit))
-        translations.append(Translation(definition: "Compatible Version", humanReadable: self.compatibilityVersion, translationType: .versionString32Bit))
-        translations.append(Translation(definition: "Path", humanReadable: self.libPath, translationType: .utf8String(self.libPathDataCount)))
-        return translations
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "Path Offset", humanReadable: "\(self.libPathOffset)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Build Time", humanReadable: "\(self.timestamp)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Version", humanReadable: self.currentVersion, translationType: .versionString32Bit)
+        translationGroup.addTranslation(definition: "Compatible Version", humanReadable: self.compatibilityVersion, translationType: .versionString32Bit)
+        translationGroup.addTranslation(definition: "Path", humanReadable: self.libPath, translationType: .utf8String(self.libPathDataCount))
     }
     
     static func version(for value: UInt32) -> String {

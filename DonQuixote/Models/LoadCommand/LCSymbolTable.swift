@@ -23,13 +23,11 @@ class LCSymbolTable: LoadCommand {
         super.init(data, type: type)
     }
     
-    override var commandTranslations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "Symbol table offset", humanReadable: self.symbolTableOffset.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Number of entries", humanReadable: "\(self.numberOfSymbolTableEntries)", translationType: .uint32))
-        translations.append(Translation(definition: "String table offset", humanReadable: self.stringTableOffset.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Size of string table", humanReadable: self.sizeOfStringTable.hex, translationType: .uint32))
-        return translations
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "Symbol table offset", humanReadable: self.symbolTableOffset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Number of entries", humanReadable: "\(self.numberOfSymbolTableEntries)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "String table offset", humanReadable: self.stringTableOffset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Size of string table", humanReadable: self.sizeOfStringTable.hex, translationType: .uint32)
     }
     
 }

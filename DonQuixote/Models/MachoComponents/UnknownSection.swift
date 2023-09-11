@@ -7,12 +7,14 @@
 
 import Foundation
 
-class UnknownSection: MachoBaseElement {
+class UnknownSection: GroupTranslatedMachoSlice {
     
-    override func loadTranslations() async {
-        await self.save(translations: [Translation(definition: "Unknow",
-                                                              humanReadable: "Mocha doesn's know how to parse this section yet.",
-                                                              translationType: .rawData(0))])
+    override func translate() async -> [TranslationGroup] {
+        let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
+        translationGroup.addTranslation(definition: "Unknow",
+                                        humanReadable: "Mocha doesn's know how to parse this section yet.",
+                                        translationType: .rawData(0))
+        return [translationGroup]
     }
     
 }

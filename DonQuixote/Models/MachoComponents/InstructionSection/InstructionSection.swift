@@ -11,22 +11,36 @@ import SwiftUI
 // ARMv8 (AArch64) Instruction Encoding
 // http://kitoslab-eng.blogspot.com/2012/10/armv8-aarch64-instruction-encoding.html
 
-extension CapStoneInstructionBank {
+final class InstructionBank: @unchecked Sendable {
+    
+    let numberOfInstructions: Int
+    private let bank: CapStoneInstructionBank
+    
+    init(_ bank: CapStoneInstructionBank) {
+        self.bank = bank
+        self.numberOfInstructions = bank.numberOfInstructions()
+    }
     
     func translation(at index: Int) -> Translation {
-        let capInstruction = self.instruction(at: index)
-        var translation = Translation(definition: nil, humanReadable: capInstruction.mnemonic + capInstruction.operand, translationType: .code(Int(capInstruction.size)))
-        translation.rangeInMacho = capInstruction.startAddrInMacho..<(capInstruction.startAddrInMacho + UInt64(capInstruction.size))
+        let capInstruction = bank.instruction(at: index)
+        let translation = Translation(dataRangeInMacho: capInstruction.startAddrInMacho..<(capInstruction.startAddrInMacho + UInt64(capInstruction.size)),
+                    definition: nil,
+                    humanReadable: capInstruction.mnemonic + capInstruction.operand,
+                    translationType: .code(Int(capInstruction.size)))
         return translation
+    }
+    
+    func searchIndexForInstruction(with targetDataIndex: UInt64) -> Int {
+        bank.searchIndexForInstruction(with: targetDataIndex)
     }
     
 }
 
-class InstructionSection: MachoBaseElement {
+
+class InstructionSection: MachoTranslatedSlice<InstructionBank> {
 
     let capStoneArchType: CapStoneArchType
     let virtualAddress: UInt64
-    var instructionBank: CapStoneInstructionBank!
     
     init(_ data: Data, title: String, cpuType: CPUType, virtualAddress: UInt64) {
         let capStoneArchType: CapStoneArchType
@@ -49,28 +63,26 @@ class InstructionSection: MachoBaseElement {
         super.init(data, title: title, subTitle: nil)
     }
     
-    override func loadTranslations() async {
-        let instructionBank = CapStoneHelper.instructions(from: self.data, arch: self.capStoneArchType, codeStartAddress: virtualAddress) { progress in
-            Task { @MainActor in
-                self.translationStore.update(loadingProgress: progress)
-            }
+    override func translate() async -> InstructionBank {
+        let bank = CapStoneHelper.instructions(from: self.data, arch: self.capStoneArchType, codeStartAddress: virtualAddress) { progress in
+            // TODO: update loading progress
         }
-        if let _ = instructionBank.error {
+        if let _ = bank.error {
             //TODO: handle error
         }
         
-        instructionBank.codeStartAddr = self.virtualAddress
-        instructionBank.instructionSectionOffsetInMacho = UInt64(self.offsetInMacho)
+        bank.codeStartAddr = self.virtualAddress
+        bank.instructionSectionOffsetInMacho = UInt64(self.offsetInMacho)
         
-        self.instructionBank = instructionBank
+        return InstructionBank(bank)
     }
     
-    override func searchForTranslation(with targetDataIndex: UInt64) async -> MachoBaseElement.TranslationSearchResult? {
-        await self.translationStore.suspendUntilLoaded(callerTag: "Translation search")
-        let searchedIndex = self.instructionBank.searchIndexForInstruction(with: targetDataIndex)
+    override func searchForTranslation(with targetDataIndex: UInt64) async -> TranslationSearchResult? {
+        guard let instructionBank = await self.untilTranslated(source: "Translation search") else { return nil }
+        let searchedIndex = instructionBank.searchIndexForInstruction(with: targetDataIndex)
         guard searchedIndex >= 0 else { return nil }
-        
-        return TranslationSearchResult(translationGroup: nil, translation: self.instructionBank.translation(at: searchedIndex))
+
+        return TranslationSearchResult(translationGroup: nil, translation: instructionBank.translation(at: searchedIndex))
     }
     
 }

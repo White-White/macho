@@ -58,27 +58,25 @@ class LCDynamicSymbolTable: LoadCommand {
         super.init(data, type: type)
     }
     
-    override var commandTranslations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "Start Index of Local Symbols ", humanReadable: "\(self.ilocalsym)", translationType: .uint32))
-        translations.append(Translation(definition: "Number of Local Symbols ", humanReadable: "\(self.nlocalsym)", translationType: .uint32))
-        translations.append(Translation(definition: "Start Index of External Defined Symbols ", humanReadable: "\(self.iextdefsym)", translationType: .uint32))
-        translations.append(Translation(definition: "Number of External Defined Symbols ", humanReadable: "\(self.nextdefsym )", translationType: .uint32))
-        translations.append(Translation(definition: "Start Index of Undefined Symbols ", humanReadable: "\(self.iundefsym)", translationType: .uint32))
-        translations.append(Translation(definition: "Number of Undefined Symbols ", humanReadable: "\(self.nundefsym)", translationType: .uint32))
-        translations.append(Translation(definition: "file offset to table of contents ", humanReadable: "\(self.tocoff.hex)", translationType: .uint32))
-        translations.append(Translation(definition: "number of entries in table of contents ", humanReadable: "\(self.ntoc)", translationType: .uint32))
-        translations.append(Translation(definition: "file offset to module table ", humanReadable: "\(self.modtaboff.hex)", translationType: .uint32))
-        translations.append(Translation(definition: "number of module table entries ", humanReadable: "\(self.nmodtab)", translationType: .uint32))
-        translations.append(Translation(definition: "offset to referenced symbol table ", humanReadable: "\(self.extrefsymoff.hex)", translationType: .uint32))
-        translations.append(Translation(definition: "number of referenced symbol table entries ", humanReadable: "\(self.nextrefsyms)", translationType: .uint32))
-        translations.append(Translation(definition: "file offset to the indirect symbol table ", humanReadable: "\(self.indirectsymoff.hex)", translationType: .uint32))
-        translations.append(Translation(definition: "number of indirect symbol table entries ", humanReadable: "\(self.nindirectsyms)", translationType: .uint32))
-        translations.append(Translation(definition: "offset to external relocation entries ", humanReadable: "\(self.extreloff.hex)", translationType: .uint32))
-        translations.append(Translation(definition: "number of external relocation entries ", humanReadable: "\(self.nextrel)", translationType: .uint32))
-        translations.append(Translation(definition: "offset to local relocation entries ", humanReadable: "\(self.locreloff.hex)", translationType: .uint32))
-        translations.append(Translation(definition: "number of local relocation entries ", humanReadable: "\(self.nlocrel)", translationType: .uint32))
-        return translations
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "Start Index of Local Symbols ", humanReadable: "\(self.ilocalsym)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Number of Local Symbols ", humanReadable: "\(self.nlocalsym)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Start Index of External Defined Symbols ", humanReadable: "\(self.iextdefsym)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Number of External Defined Symbols ", humanReadable: "\(self.nextdefsym )", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Start Index of Undefined Symbols ", humanReadable: "\(self.iundefsym)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Number of Undefined Symbols ", humanReadable: "\(self.nundefsym)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "file offset to table of contents ", humanReadable: "\(self.tocoff.hex)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "number of entries in table of contents ", humanReadable: "\(self.ntoc)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "file offset to module table ", humanReadable: "\(self.modtaboff.hex)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "number of module table entries ", humanReadable: "\(self.nmodtab)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "offset to referenced symbol table ", humanReadable: "\(self.extrefsymoff.hex)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "number of referenced symbol table entries ", humanReadable: "\(self.nextrefsyms)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "file offset to the indirect symbol table ", humanReadable: "\(self.indirectsymoff.hex)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "number of indirect symbol table entries ", humanReadable: "\(self.nindirectsyms)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "offset to external relocation entries ", humanReadable: "\(self.extreloff.hex)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "number of external relocation entries ", humanReadable: "\(self.nextrel)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "offset to local relocation entries ", humanReadable: "\(self.locreloff.hex)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "number of local relocation entries ", humanReadable: "\(self.nlocrel)", translationType: .uint32)
     }
     
     func indirectSymbolTable(machoData: Data, machoHeader: MachoHeader, symbolTable: SymbolTable?) -> IndirectSymbolTable? {

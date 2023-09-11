@@ -7,7 +7,7 @@
 
 import Foundation
 
-class StringSection: MachoBaseElement {
+class StringSection: GroupTranslatedMachoSlice {
     
     let encoding: String.Encoding
     let stringContainer: StringContainer
@@ -18,24 +18,23 @@ class StringSection: MachoBaseElement {
         super.init(data, title: title, subTitle: subTitle)
     }
     
-    override func loadTranslations() async {
-        let sectionDataStartIndex = self.data.startIndex
-        var translations: [Translation] = []
-        for rawString in await self.stringContainer.rawStrings {
-            let stringContent = await self.stringContainer.stringContent(for: rawString)
-            var translation = Translation(definition: nil,
-                                                 humanReadable: stringContent.content ?? "Invalid \(self.encoding) string. Debug me",
-                                                 translationType: self.encoding == .utf8 ? .utf8String(stringContent.byteCount) : .utf16String(stringContent.byteCount),
-                                                 extraDefinition: stringContent.demangled != nil ? "Demangled" : nil,
-                                                 extraHumanReadable: stringContent.demangled)
-            translation.rangeInMacho = UInt64(sectionDataStartIndex + rawString.offset)..<UInt64(sectionDataStartIndex + rawString.offset + rawString.dataSize)
-            translations.append(translation)
-        }
-        await self.save(translations: translations)
+    override func initialize() async {
+        //TODO:
     }
     
-    override func updateRangeForTranslations() {
-        // do nothing
+    
+    
+    override func translate() async -> [TranslationGroup] {
+        let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
+        for rawString in await self.stringContainer.rawStrings {
+            let stringContent = await self.stringContainer.stringContent(for: rawString)
+            translationGroup.addTranslation(definition: nil,
+                                            humanReadable: stringContent.content ?? "Invalid \(self.encoding) string. Debug me",
+                                            translationType: self.encoding == .utf8 ? .utf8String(stringContent.byteCount) : .utf16String(stringContent.byteCount),
+                                            extraDefinition: stringContent.demangled != nil ? "Demangled" : nil,
+                                            extraHumanReadable: stringContent.demangled)
+        }
+        return [translationGroup]
     }
     
     func findString(atDataOffset offset: Int) async -> String? {

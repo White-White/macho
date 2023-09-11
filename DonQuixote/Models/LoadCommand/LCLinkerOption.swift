@@ -20,11 +20,9 @@ class LCLinkerOption: LoadCommand {
         super.init(data, type: type)
     }
     
-    override var commandTranslations: [Translation] {
-        return [
-            Translation(definition: "Number of options", humanReadable: "\(self.numberOfOptions)", translationType: .uint32),
-            Translation(definition: "Options(s)", humanReadable: self.options.joined(separator: " "), translationType: .utf8String(self.optionDataLength))
-        ]
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "Number of options", humanReadable: "\(self.numberOfOptions)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Options(s)", humanReadable: self.options.joined(separator: " "), translationType: .utf8String(self.optionDataLength))
     }
     
     static func options(from data: Data) -> [String] {

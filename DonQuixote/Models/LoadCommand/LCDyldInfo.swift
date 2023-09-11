@@ -39,24 +39,22 @@ class LCDyldInfo: LoadCommand {
         super.init(data, type: type)
     }
     
-    override var commandTranslations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "Rebase Info File Offset", humanReadable: rebaseOffset.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Rebase Info Size", humanReadable: rebaseSize.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Binding Info File Offset", humanReadable: bindOffset.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Binding Info Size", humanReadable: bindSize.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Weak Binding Info File Offset", humanReadable: weakBindOffset.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Weak Binding Info Size", humanReadable: weakBindSize.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Lazy Binding Info File Offset", humanReadable: lazyBindOffset.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Lazy Binding Info Size", humanReadable: lazyBindSize.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Export Info File Offset", humanReadable: exportOffset.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Export Info Size", humanReadable: exportSize.hex, translationType: .uint32))
-        return translations
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "Rebase Info File Offset", humanReadable: rebaseOffset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Rebase Info Size", humanReadable: rebaseSize.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Binding Info File Offset", humanReadable: bindOffset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Binding Info Size", humanReadable: bindSize.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Weak Binding Info File Offset", humanReadable: weakBindOffset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Weak Binding Info Size", humanReadable: weakBindSize.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Lazy Binding Info File Offset", humanReadable: lazyBindOffset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Lazy Binding Info Size", humanReadable: lazyBindSize.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Export Info File Offset", humanReadable: exportOffset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Export Info Size", humanReadable: exportSize.hex, translationType: .uint32)
     }
     
-    func dyldInfoSections(machoData: Data, machoHeader: MachoHeader) -> [MachoBaseElement] {
+    func dyldInfoSections(machoData: Data, machoHeader: MachoHeader) -> [MachoSlice] {
         let is64Bit = machoHeader.is64Bit
-        var components: [MachoBaseElement] = []
+        var components: [MachoSlice] = []
         let rebaseInfoStart = Int(self.rebaseOffset)
         let rebaseInfoSize = Int(self.rebaseSize)
         if rebaseInfoStart.isNotZero && rebaseInfoSize.isNotZero {

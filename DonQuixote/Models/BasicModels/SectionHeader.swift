@@ -116,6 +116,7 @@ struct SectionAttributes {
 
 struct SectionHeader {
     
+    let dataStartIndex: Int
     let segment: String
     let section: String
     let addr: UInt64
@@ -132,6 +133,7 @@ struct SectionHeader {
     let is64Bit: Bool
     
     init(is64Bit: Bool, data: Data) {
+        self.dataStartIndex = data.startIndex
         self.is64Bit = is64Bit
         var dataShifter = DataShifter(data)
         self.section = dataShifter.shift(.rawNumber(16)).utf8String!.spaceRemoved /* Very unlikely crash */
@@ -150,22 +152,22 @@ struct SectionHeader {
         self.reserved3 = is64Bit ? dataShifter.shiftUInt32() : nil
     }
     
-    func getTranslations() -> [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "Section Name", humanReadable: self.section, translationType: .utf8String(16)))
-        translations.append(Translation(definition: "Segment Name", humanReadable: self.segment, translationType: .utf8String(16)))
-        translations.append(Translation(definition: "Virtual Address", humanReadable: self.addr.hex, translationType: self.is64Bit ? .uint64 : .uint32))
-        translations.append(Translation(definition: "Section Size", humanReadable: self.size.hex, translationType: self.is64Bit ? .uint64 : .uint32))
-        translations.append(Translation(definition: "File Offset", humanReadable: self.offset.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Align", humanReadable: "\(self.align)", translationType: .uint32))
-        translations.append(Translation(definition: "Reloc Entry Offset", humanReadable: self.fileOffsetOfRelocationEntries.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Reloc Entry Number", humanReadable: "\(self.numberOfRelocatioEntries)", translationType: .uint32))
-        translations.append(Translation(definition: "Section Type", humanReadable: "\(self.sectionType)", translationType: .numberEnum8Bit))
-        translations.append(Translation(definition: "Section Attributes", humanReadable: self.sectionAttributes.descriptions.joined(separator: "\n"), translationType: .flags(3)))
-        translations.append(Translation(definition: self.sectionType.hasIndirectSymbolTableEntries ? "Indirect Symbol Table Index" : "reserved1", humanReadable: self.reserved1.hex, translationType: .uint32))
-        translations.append(Translation(definition: self.sectionType == .S_SYMBOL_STUBS ? "Stub Size" : "reserved2", humanReadable: self.reserved2.hex, translationType: .uint32))
-        if let reserved3 = self.reserved3 { translations.append(Translation(definition: "reserved3", humanReadable: reserved3.hex, translationType: .uint32)) }
-        return translations
+    var translationGroup: TranslationGroup {
+        let translationGroup = TranslationGroup(dataStartIndex: self.dataStartIndex)
+        translationGroup.addTranslation(definition: "Section Name", humanReadable: self.section, translationType: .utf8String(16))
+        translationGroup.addTranslation(definition: "Segment Name", humanReadable: self.segment, translationType: .utf8String(16))
+        translationGroup.addTranslation(definition: "Virtual Address", humanReadable: self.addr.hex, translationType: self.is64Bit ? .uint64 : .uint32)
+        translationGroup.addTranslation(definition: "Section Size", humanReadable: self.size.hex, translationType: self.is64Bit ? .uint64 : .uint32)
+        translationGroup.addTranslation(definition: "File Offset", humanReadable: self.offset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Align", humanReadable: "\(self.align)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Reloc Entry Offset", humanReadable: self.fileOffsetOfRelocationEntries.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Reloc Entry Number", humanReadable: "\(self.numberOfRelocatioEntries)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Section Type", humanReadable: "\(self.sectionType)", translationType: .numberEnum8Bit)
+        translationGroup.addTranslation(definition: "Section Attributes", humanReadable: self.sectionAttributes.descriptions.joined(separator: "\n"), translationType: .flags(3))
+        translationGroup.addTranslation(definition: self.sectionType.hasIndirectSymbolTableEntries ? "Indirect Symbol Table Index" : "reserved1", humanReadable: self.reserved1.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: self.sectionType == .S_SYMBOL_STUBS ? "Stub Size" : "reserved2", humanReadable: self.reserved2.hex, translationType: .uint32)
+        if let reserved3 = self.reserved3 { translationGroup.addTranslation(definition: "reserved3", humanReadable: reserved3.hex, translationType: .uint32) }
+        return translationGroup
     }
 
 }

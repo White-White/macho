@@ -16,13 +16,17 @@ class TickTock {
         return TickTock()
     }
     
-    func tock(_ name: String, threshHold: Double = 1) {
+    func tock(_ name: String, threshHold: Double? = nil) {
         let nextTs = CACurrentMediaTime() * 1000
         let timeGap = nextTs - ts; ts = nextTs
         guard enabled else { return }
-        guard timeGap > threshHold else { return }
+        if let threshHold, timeGap <= threshHold { return }
         print("\n\(name)'s time usage:")
         print("--- \(timeGap) ms.")
+    }
+    
+    func reset() {
+        ts = CACurrentMediaTime() * 1000
     }
  
     func disable() -> TickTock {

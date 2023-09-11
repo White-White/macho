@@ -7,10 +7,10 @@
 
 import Foundation
 
-class SymbolTable: MachoBaseElement {
+class SymbolTable: GroupTranslatedMachoSlice {
     
     let is64Bit: Bool
-    let stringTable: StringTable?
+    let stringTable: StringTable
     let machoSectionHeaders: [SectionHeader]
     
     private var symbolTableEntries: [SymbolTableEntry] = []
@@ -20,7 +20,7 @@ class SymbolTable: MachoBaseElement {
          numberOfSymbolTableEntries: Int,
          machoData: Data,
          machoHeader: MachoHeader,
-         stringTable: StringTable?,
+         stringTable: StringTable,
          machoSectionHeaders: [SectionHeader]) {
         
         let entrySize = machoHeader.is64Bit ? 16 : 12
@@ -32,7 +32,7 @@ class SymbolTable: MachoBaseElement {
         
     }
     
-    override func asyncInit() async {
+    override func initialize() async {
         let modelSize = self.is64Bit ? SymbolTableEntry.modelSizeFor64Bit : SymbolTableEntry.modelSizeFor32Bit
         let numberOfModels = self.dataSize/modelSize
         for index in 0..<numberOfModels {
@@ -57,15 +57,16 @@ class SymbolTable: MachoBaseElement {
         }
     }
     
-    override func loadTranslations() async {
+    override func translate() async -> [TranslationGroup] {
+        var translationGroups: [TranslationGroup] = []
         for entry in self.symbolTableEntries {
-            let translations = await entry.generateTranslations()
-            await self.save(translations: translations)
+            translationGroups.append(await entry.translationGroup)
         }
+        return translationGroups
     }
     
     func findSymbol(byVirtualAddress virtualAddress: UInt64, callerTag: String) async -> [SymbolTableEntry]? {
-        await self.asyncInitProtector.suspendUntilInited()
+        await self.untilInitialized(source: callerTag)
         var symbolTableEntrys: [SymbolTableEntry] = []
         if let symbolTableEntryIndexs = symbolTableEntryMap[virtualAddress] {
             symbolTableEntrys = symbolTableEntryIndexs.map { self.symbolTableEntries[$0] }
@@ -74,7 +75,7 @@ class SymbolTable: MachoBaseElement {
     }
     
     func findSymbol(atIndex index: Int, callerTag: String) async -> SymbolTableEntry {
-        await self.asyncInitProtector.suspendUntilInited()
+        await self.untilInitialized(source: callerTag)
         guard index < self.symbolTableEntries.count else { fatalError() }
         return self.symbolTableEntries[index]
     }

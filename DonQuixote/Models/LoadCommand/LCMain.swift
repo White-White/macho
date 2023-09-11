@@ -18,9 +18,9 @@ class LCMain: LoadCommand {
         super.init(data, type: type)
     }
     
-    override var commandTranslations: [Translation] {
-        return [Translation(definition: "Entry Offset (relative to __TEXT)", humanReadable: entryOffset.hex, translationType: .uint64),
-                Translation(definition: "Entry Offset (relative to __TEXT)", humanReadable: entryOffset.hex, translationType: .uint64)]
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "Entry Offset (relative to __TEXT)", humanReadable: entryOffset.hex, translationType: .uint64)
+        translationGroup.addTranslation(definition: "Entry Offset (relative to __TEXT)", humanReadable: entryOffset.hex, translationType: .uint64)
     }
     
 }

@@ -8,22 +8,21 @@
 import SwiftUI
 import AppKit
 
+protocol HexFiendViewControllerDelegate: NSObjectProtocol {
+    func didClickHexView(at charIndex: UInt64)
+}
+
 public class HexFiendViewController: NSViewController {
     
-    static let MouseDownNoti: Notification.Name = Notification.Name(rawValue: "DonQuiDidMouseDownOnHex")
-    static let MouseDownNotiCharIndexKey: String = "DonQuiDidMouseDownOnHex_Index"
-    
-    static let bytesPerLine = 16
+    static let fontSize: CGFloat = 12
+    static let bytesPerLine = 20
     let data: Data
     let hfController: HFController
     let layoutRep: HFLayoutRepresenter
+    weak var delegate: HexFiendViewControllerDelegate?
     
     public override func loadView() {
-        view = NSView(frame: .zero)
-        let layoutView = layoutRep.view()
-        layoutView.frame = view.bounds
-        layoutView.autoresizingMask = [.width, .height]
-        view.addSubview(layoutView)
+        view = layoutRep.view()
     }
     
     init(data: Data) {
@@ -33,36 +32,38 @@ public class HexFiendViewController: NSViewController {
         self.hfController = HFController()
         self.hfController.bytesPerColumn = 1
         self.hfController.editable = false
-        self.hfController.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        self.hfController.font = NSFont.monospacedSystemFont(ofSize: HexFiendViewController.fontSize, weight: .regular)
         
         let byteSlice = HFSharedMemoryByteSlice(unsharedData: data)
         let byteArray = HFBTreeByteArray()
         byteArray.insertByteSlice(byteSlice, in: HFRangeMake(0, 0))
         hfController.byteArray = byteArray
         
-        self.layoutRep = HFLayoutRepresenter()
+        let layoutRep = HFLayoutRepresenter()
         let hexRep = HFHexTextRepresenter()
         let scrollRep = HFVerticalScrollerRepresenter()
         let lineCounting = HFUntouchableLineCountingRepresenter()
         lineCounting.lineNumberFormat = HFLineNumberFormat.hexadecimal
         if let lineCountingView = lineCounting.view() as? HFLineCountingView {
-            lineCountingView.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+            lineCountingView.font = NSFont.monospacedSystemFont(ofSize: HexFiendViewController.fontSize, weight: .regular)
         }
         let asciiRep = HFStringEncodingTextRepresenter()
         if let asciiView = asciiRep.view() as? HFRepresenterTextView {
-            asciiView.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+            asciiView.font = NSFont.monospacedSystemFont(ofSize: HexFiendViewController.fontSize, weight: .regular)
         }
         
         hfController.addRepresenter(lineCounting)
-        hfController.addRepresenter(self.layoutRep)
+        hfController.addRepresenter(layoutRep)
         hfController.addRepresenter(hexRep)
         hfController.addRepresenter(scrollRep)
         hfController.addRepresenter(asciiRep)
         
-        self.layoutRep.addRepresenter(lineCounting)
-        self.layoutRep.addRepresenter(hexRep)
-        self.layoutRep.addRepresenter(asciiRep)
-        self.layoutRep.addRepresenter(scrollRep)
+        layoutRep.addRepresenter(lineCounting)
+        layoutRep.addRepresenter(hexRep)
+        layoutRep.addRepresenter(asciiRep)
+        layoutRep.addRepresenter(scrollRep)
+        
+        self.layoutRep = layoutRep
         
         super.init(nibName: nil, bundle: nil)
         self.hfController.setController(self)
@@ -111,18 +112,46 @@ public class HexFiendViewController: NSViewController {
     // exposed to Objective-C
     @objc
     func didClickCharacter(at index: UInt64) {
-        let noti = Notification(name: HexFiendViewController.MouseDownNoti, object: self, userInfo: [HexFiendViewController.MouseDownNotiCharIndexKey: index])
-        NotificationCenter.default.post(noti)
+        self.delegate?.didClickHexView(at: index)
     }
+    
 }
 
-struct ViewControllerRepresentable: NSViewControllerRepresentable {
-    typealias NSViewControllerType = NSViewController
-    let viewController: NSViewController
-    func makeNSViewController(context: Context) -> NSViewController {
-        return self.viewController
+struct HexFiendViewControllerRepresentable: NSViewControllerRepresentable {
+    
+    typealias NSViewControllerType = HexFiendViewController
+    
+    let data: Data
+    @Binding var machoViewSelection: MachoViewSelection
+    let clickingHexViewCallBack: ((_ charIndex: UInt64) -> Void)
+    
+    func makeNSViewController(context: Context) -> HexFiendViewController {
+        let hexFiendViewController = HexFiendViewController(data: data)
+        hexFiendViewController.delegate = context.coordinator
+        return hexFiendViewController
     }
-    func updateNSViewController(_ nsViewController: NSViewController, context: Context) {
-        
+    
+    func updateNSViewController(_ hexFiendViewController: HexFiendViewController, context: Context) {
+        hexFiendViewController.updateColorDataRange(with: machoViewSelection.coloredDataRange)
+        hexFiendViewController.updateSelectedDataRange(with: machoViewSelection.selectedDataRange, autoScroll: true)
     }
+    
+    class HexViewCoordinator: NSObject, HexFiendViewControllerDelegate {
+        let clickingHexViewCallBack: ((_ charIndex: UInt64) -> Void)
+        init(clickingHexViewCallBack: @escaping (_: UInt64) -> Void) {
+            self.clickingHexViewCallBack = clickingHexViewCallBack
+        }
+        func didClickHexView(at charIndex: UInt64) {
+            self.clickingHexViewCallBack(charIndex)
+        }
+    }
+    
+    func makeCoordinator() -> HexViewCoordinator {
+        return HexViewCoordinator(clickingHexViewCallBack: self.clickingHexViewCallBack)
+    }
+    
+    func sizeThatFits(_ proposal: ProposedViewSize, nsViewController: HexFiendViewController, context: Context) -> CGSize? {
+        CGSize(width: nsViewController.layoutRep.minimumViewWidth(forBytesPerLine: UInt(HexFiendViewController.bytesPerLine)), height: proposal.height ?? .infinity)
+    }
+    
 }

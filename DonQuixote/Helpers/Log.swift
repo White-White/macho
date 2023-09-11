@@ -9,6 +9,8 @@ import Foundation
 
 class Log {
     
+    private init() {}
+    
     @discardableResult
     static func warning(_ string: String) -> String {
         return printAndReturn("⚠️ " + string)
@@ -22,4 +24,5 @@ class Log {
     private static func printAndReturn(_ s: String) -> String {
         print(s); return s
     }
+    
 }

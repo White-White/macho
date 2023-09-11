@@ -149,7 +149,7 @@ struct SymbolTableEntry {
     static var modelSizeFor32Bit: Int { 12 }
     
     let is64Bit: Bool
-    let stringTable: StringTable?
+    let stringTable: StringTable
     let machoSectionHeaders: [SectionHeader]
     
     let indexInStringTable: UInt32
@@ -183,7 +183,10 @@ struct SymbolTableEntry {
     let nDesc: Swift.UInt16
     let nValue: UInt64
     
-    init(with data: Data, is64Bit: Bool, stringTable: StringTable?, machoSectionHeaders: [SectionHeader]) async {
+    let dataStartIndex: Int
+    
+    init(with data: Data, is64Bit: Bool, stringTable: StringTable, machoSectionHeaders: [SectionHeader]) async {
+        self.dataStartIndex = data.startIndex
         
         self.is64Bit = is64Bit
         self.stringTable = stringTable
@@ -226,65 +229,67 @@ struct SymbolTableEntry {
         switch self.symbolType {
         case .stab(_):
             //TODO: make sure for stab symbol, it's normal to fail to find symbol name
-            if let foundName = await self.stringTable?.findString(atDataOffset: Int(self.indexInStringTable)) {
+            if let foundName = await self.stringTable.findString(atDataOffset: Int(self.indexInStringTable)) {
                 self.symbolName = foundName
             } else {
                 self.symbolName = "Not found"
             }
         default:
-            self.symbolName = await self.stringTable?.findString(atDataOffset: Int(self.indexInStringTable)) ?? "Not Found"
+            self.symbolName = await self.stringTable.findString(atDataOffset: Int(self.indexInStringTable)) ?? "Not Found"
         }
     }
     
-    func generateTranslations() async -> [Translation] {
-        var translations: [Translation] = []
-
-        translations.append(Translation(definition: "String Table Offset", humanReadable: self.indexInStringTable.hex,
-                                               translationType: .uint32,
-                                               extraDefinition: "Symbol Name from String Table", extraHumanReadable: self.symbolName))
-        
-        var symbolTypeExplanation: String = self.symbolType.readable
-        var nSectExplanation: String = "\(nSect)"
-        
-        var nValueDesp: String = "Value"
-        var nValueExplanation: String = "\(nValue)"
-        var nValueExtraDesp: String?
-        var nValueExtraExplanation: String?
-        
-        switch self.symbolType {
-        case .undefined:
-            nSectExplanation = "0 (NO_SECT)"
-        case .absolute:
-            nSectExplanation = "0 (NO_SECT)"
-        case .section:
-            let ordinal = Int(self.nSect)
-            let sectionHeader = machoSectionHeaders[ordinal - 1] // ordinal starts from 1
-            let sectionName = sectionHeader.segment + "," + sectionHeader.section
-            symbolTypeExplanation += (sectionName + " (N_SECT)")
-        case .indirect:
-            nValueDesp = "String table offset"
-            nValueExplanation = nValue.hex
-            nValueExtraDesp = "Referred string"
-            nValueExtraExplanation = await self.stringTable?.findString(atDataOffset: Int(nValue))
-        default:
-            break
+    var translationGroup: TranslationGroup {
+        get async {
+            let translationGroup = TranslationGroup(dataStartIndex: self.dataStartIndex)
+            
+            translationGroup.addTranslation(definition: "String Table Offset", humanReadable: self.indexInStringTable.hex,
+                                                   translationType: .uint32,
+                                                   extraDefinition: "Symbol Name from String Table", extraHumanReadable: self.symbolName)
+            
+            var symbolTypeExplanation: String = self.symbolType.readable
+            var nSectExplanation: String = "\(nSect)"
+            
+            var nValueDesp: String = "Value"
+            var nValueExplanation: String = "\(nValue)"
+            var nValueExtraDesp: String?
+            var nValueExtraExplanation: String?
+            
+            switch self.symbolType {
+            case .undefined:
+                nSectExplanation = "0 (NO_SECT)"
+            case .absolute:
+                nSectExplanation = "0 (NO_SECT)"
+            case .section:
+                let ordinal = Int(self.nSect)
+                let sectionHeader = machoSectionHeaders[ordinal - 1] // ordinal starts from 1
+                let sectionName = sectionHeader.segment + "," + sectionHeader.section
+                symbolTypeExplanation += (sectionName + " (N_SECT)")
+            case .indirect:
+                nValueDesp = "String table offset"
+                nValueExplanation = nValue.hex
+                nValueExtraDesp = "Referred string"
+                nValueExtraExplanation = await self.stringTable.findString(atDataOffset: Int(nValue))
+            default:
+                break
+            }
+            
+            translationGroup.addTranslation(definition: "Symbol Type",
+                                            humanReadable: symbolTypeExplanation + " (Private External:\(self.isPrivateExternalSymbol), External:\(self.isExternalSymbol)",
+                                            translationType: .numberEnum8Bit)
+            
+            translationGroup.addTranslation(definition: "Section Ordinal", humanReadable: nSectExplanation,
+                                            translationType: .uint8)
+            
+            translationGroup.addTranslation(definition: "Descriptions", humanReadable: SymbolTableEntry.flagsFrom(nDesc: nDesc, symbolType: symbolType).joined(separator: "\n"),
+                                            translationType: .flags(2))
+            
+            translationGroup.addTranslation(definition: nValueDesp, humanReadable: nValueExplanation,
+                                            translationType: self.is64Bit ? .uint64 : .uint32,
+                                            extraDefinition: nValueExtraDesp, extraHumanReadable: nValueExtraExplanation)
+            
+            return translationGroup
         }
-        
-        translations.append(Translation(definition: "Symbol Type",
-                                        humanReadable: symbolTypeExplanation + " (Private External:\(self.isPrivateExternalSymbol), External:\(self.isExternalSymbol)",
-                                        translationType: .numberEnum8Bit))
-        
-        translations.append(Translation(definition: "Section Ordinal", humanReadable: nSectExplanation,
-                                        translationType: .uint8))
-        
-        translations.append(Translation(definition: "Descriptions", humanReadable: SymbolTableEntry.flagsFrom(nDesc: nDesc, symbolType: symbolType).joined(separator: "\n"),
-                                        translationType: .flags(2)))
-        
-        translations.append(Translation(definition: nValueDesp, humanReadable: nValueExplanation,
-                                        translationType: self.is64Bit ? .uint64 : .uint32,
-                                        extraDefinition: nValueExtraDesp, extraHumanReadable: nValueExtraExplanation))
-        
-        return translations
     }
     
     static func flagsFrom(nDesc: UInt16, symbolType: SymbolType) -> [String] {

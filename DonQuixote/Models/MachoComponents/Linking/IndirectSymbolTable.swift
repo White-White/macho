@@ -7,7 +7,7 @@
 
 import Foundation
 
-class IndirectSymbolTable: MachoBaseElement {
+class IndirectSymbolTable: GroupTranslatedMachoSlice {
     
     let is64Bit: Bool
     let symbolTable: SymbolTable?
@@ -19,16 +19,22 @@ class IndirectSymbolTable: MachoBaseElement {
         super.init(data, title: title, subTitle: nil)
     }
     
-    override func loadTranslations() async {
+    override func initialize() async {
         let modelSize = self.is64Bit ? IndirectSymbolTableEntry.modelSizeFor64Bit : IndirectSymbolTableEntry.modelSizeFor32Bit
         let numberOfModels = self.dataSize/modelSize
         for index in 0..<numberOfModels {
             let data = self.data.subSequence(from: index * modelSize, count: modelSize)
             let entry = IndirectSymbolTableEntry(with: data, is64Bit: self.is64Bit, symbolTable: self.symbolTable)
             self.indirectSymbolTableEntries.append(entry)
-            let translations = await entry.generateTranslations()
-            await self.save(translations: translations)
         }
+    }
+    
+    override func translate() async -> [TranslationGroup] {
+        var translationGroups: [TranslationGroup] = []
+        for entry in indirectSymbolTableEntries {
+            translationGroups.append(await entry.translationGroup)
+        }
+        return translationGroups
     }
     
     func findIndirectSymbol(atIndex index: Int) -> IndirectSymbolTableEntry {

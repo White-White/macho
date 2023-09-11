@@ -9,6 +9,11 @@
 /* Begin PBXBuildFile section */
 		1F181CE12A4822BD0014B9D6 /* IPA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F181CE02A4822BD0014B9D6 /* IPA.swift */; };
 		1F181CE32A4823380014B9D6 /* IPAView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F181CE22A4823380014B9D6 /* IPAView.swift */; };
+		1F2FBDE72AAB01DA001080E8 /* TranslationGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDE62AAB01DA001080E8 /* TranslationGroup.swift */; };
+		1F2FBDE92AAB1210001080E8 /* MachoHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDE82AAB1210001080E8 /* MachoHeader.swift */; };
+		1F2FBDED2AAB561F001080E8 /* GroupTranslatedSlice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDEC2AAB561F001080E8 /* GroupTranslatedSlice.swift */; };
+		1F2FBDF02AAB5D35001080E8 /* InstructionTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDEF2AAB5D35001080E8 /* InstructionTranslationView.swift */; };
+		1F2FBDF22AAB5D44001080E8 /* TranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDF12AAB5D44001080E8 /* TranslationView.swift */; };
 		1F4674632A8399DA00E0AF83 /* FileLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4674622A8399DA00E0AF83 /* FileLocation.swift */; };
 		1F4674652A83B43200E0AF83 /* FileType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4674642A83B43200E0AF83 /* FileType.swift */; };
 		1F80748A2A330E8B00012724 /* DonQuixoteApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8074892A330E8B00012724 /* DonQuixoteApp.swift */; };
@@ -51,7 +56,7 @@
 		1F80769C2A331EB100012724 /* CapStoneHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076542A331DF400012724 /* CapStoneHelper.m */; };
 		1F80769D2A331EB100012724 /* UnknownSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076562A331DF400012724 /* UnknownSection.swift */; };
 		1F80769E2A331EB100012724 /* PointerComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076512A331DF400012724 /* PointerComponent.swift */; };
-		1F80769F2A331EB100012724 /* MachoBaseElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076572A331DF400012724 /* MachoBaseElement.swift */; };
+		1F80769F2A331EB100012724 /* MachoSlice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076572A331DF400012724 /* MachoSlice.swift */; };
 		1F8076A12A331EC200012724 /* IndirectSymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F80765F2A331DF400012724 /* IndirectSymbolTable.swift */; };
 		1F8076A22A331EC200012724 /* SymbolTableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076602A331DF400012724 /* SymbolTableEntry.swift */; };
 		1F8076A32A331EC200012724 /* IndirectSymbolTableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076592A331DF400012724 /* IndirectSymbolTableEntry.swift */; };
@@ -69,7 +74,6 @@
 		1F8076B12A331F2100012724 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F80766E2A331DF400012724 /* Log.swift */; };
 		1F8076B22A331F2100012724 /* Demangle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076702A331DF400012724 /* Demangle.swift */; };
 		1F8076B32A331F2100012724 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076712A331DF400012724 /* Extensions.swift */; };
-		1F8076B72A33362900012724 /* MachoSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076B62A33362900012724 /* MachoSection.swift */; };
 		1F8076BC2A35760C00012724 /* StringSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076BB2A35760C00012724 /* StringSection.swift */; };
 		1F8076C12A358B5600012724 /* CStringSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076C02A358B5600012724 /* CStringSection.swift */; };
 		1F8076C32A358C6400012724 /* UStringSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076C22A358C6400012724 /* UStringSection.swift */; };
@@ -79,7 +83,7 @@
 		1F8076D12A36007800012724 /* HexFiend.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1F8074EC2A331D2900012724 /* HexFiend.framework */; };
 		1F8076D22A36007800012724 /* HexFiend.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1F8074EC2A331D2900012724 /* HexFiend.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		1F8076EF2A36BDAF00012724 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076EE2A36BDAF00012724 /* Errors.swift */; };
-		1F80775E2A386DE100012724 /* TranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F80775D2A386DE100012724 /* TranslationView.swift */; };
+		1F80775E2A386DE100012724 /* GroupTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F80775D2A386DE100012724 /* GroupTranslationView.swift */; };
 		1FAEE8D32A84BE6900472AE0 /* DocumentWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAEE8D22A84BE6900472AE0 /* DocumentWindow.swift */; };
 		1FAEE8D52A84BFB500472AE0 /* MachoItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAEE8D42A84BFB500472AE0 /* MachoItemView.swift */; };
 		1FAEE8D82A84C1E700472AE0 /* MachoContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAEE8D72A84C1E700472AE0 /* MachoContainerView.swift */; };
@@ -284,6 +288,11 @@
 /* Begin PBXFileReference section */
 		1F181CE02A4822BD0014B9D6 /* IPA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPA.swift; sourceTree = "<group>"; };
 		1F181CE22A4823380014B9D6 /* IPAView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPAView.swift; sourceTree = "<group>"; };
+		1F2FBDE62AAB01DA001080E8 /* TranslationGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationGroup.swift; sourceTree = "<group>"; };
+		1F2FBDE82AAB1210001080E8 /* MachoHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoHeader.swift; sourceTree = "<group>"; };
+		1F2FBDEC2AAB561F001080E8 /* GroupTranslatedSlice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupTranslatedSlice.swift; sourceTree = "<group>"; };
+		1F2FBDEF2AAB5D35001080E8 /* InstructionTranslationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionTranslationView.swift; sourceTree = "<group>"; };
+		1F2FBDF12AAB5D44001080E8 /* TranslationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationView.swift; sourceTree = "<group>"; };
 		1F4674622A8399DA00E0AF83 /* FileLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileLocation.swift; sourceTree = "<group>"; };
 		1F4674642A83B43200E0AF83 /* FileType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileType.swift; sourceTree = "<group>"; };
 		1F8074862A330E8B00012724 /* DonQuixote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DonQuixote.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -331,7 +340,7 @@
 		1F8076542A331DF400012724 /* CapStoneHelper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CapStoneHelper.m; sourceTree = "<group>"; };
 		1F8076552A331DF400012724 /* FunctionStartsComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionStartsComponent.swift; sourceTree = "<group>"; };
 		1F8076562A331DF400012724 /* UnknownSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnknownSection.swift; sourceTree = "<group>"; };
-		1F8076572A331DF400012724 /* MachoBaseElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoBaseElement.swift; sourceTree = "<group>"; };
+		1F8076572A331DF400012724 /* MachoSlice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoSlice.swift; sourceTree = "<group>"; };
 		1F8076592A331DF400012724 /* IndirectSymbolTableEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndirectSymbolTableEntry.swift; sourceTree = "<group>"; };
 		1F80765A2A331DF400012724 /* DataInCodeSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataInCodeSection.swift; sourceTree = "<group>"; };
 		1F80765B2A331DF400012724 /* RelocationEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelocationEntry.swift; sourceTree = "<group>"; };
@@ -354,12 +363,11 @@
 		1F8076752A331DF400012724 /* InterpreterUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterpreterUtils.swift; sourceTree = "<group>"; };
 		1F8076762A331DF400012724 /* TickTock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TickTock.swift; sourceTree = "<group>"; };
 		1F8076782A331DF400012724 /* Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
-		1F8076B62A33362900012724 /* MachoSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoSection.swift; sourceTree = "<group>"; };
 		1F8076BB2A35760C00012724 /* StringSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringSection.swift; sourceTree = "<group>"; };
 		1F8076C02A358B5600012724 /* CStringSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CStringSection.swift; sourceTree = "<group>"; };
 		1F8076C22A358C6400012724 /* UStringSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UStringSection.swift; sourceTree = "<group>"; };
 		1F8076EE2A36BDAF00012724 /* Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
-		1F80775D2A386DE100012724 /* TranslationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationView.swift; sourceTree = "<group>"; };
+		1F80775D2A386DE100012724 /* GroupTranslationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupTranslationView.swift; sourceTree = "<group>"; };
 		1FAEE8D22A84BE6900472AE0 /* DocumentWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentWindow.swift; sourceTree = "<group>"; };
 		1FAEE8D42A84BFB500472AE0 /* MachoItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoItemView.swift; sourceTree = "<group>"; };
 		1FAEE8D72A84C1E700472AE0 /* MachoContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoContainerView.swift; sourceTree = "<group>"; };
@@ -391,6 +399,28 @@
 				1FD8A89F2A49714700F2AECB /* ProjectExtension.swift */,
 			);
 			path = Faking;
+			sourceTree = "<group>";
+		};
+		1F2FBDCD2AAAFEA5001080E8 /* BasicModels */ = {
+			isa = PBXGroup;
+			children = (
+				1F8076352A331DF400012724 /* Macho.swift */,
+				1F2FBDE82AAB1210001080E8 /* MachoHeader.swift */,
+				1F8076572A331DF400012724 /* MachoSlice.swift */,
+				1F8076332A331DF400012724 /* CPUType.swift */,
+				1F8076622A331DF400012724 /* SectionHeader.swift */,
+			);
+			path = BasicModels;
+			sourceTree = "<group>";
+		};
+		1F2FBDEE2AAB5862001080E8 /* TranslationViews */ = {
+			isa = PBXGroup;
+			children = (
+				1F2FBDF12AAB5D44001080E8 /* TranslationView.swift */,
+				1F80775D2A386DE100012724 /* GroupTranslationView.swift */,
+				1F2FBDEF2AAB5D35001080E8 /* InstructionTranslationView.swift */,
+			);
+			path = TranslationViews;
 			sourceTree = "<group>";
 		};
 		1F80747D2A330E8A00012724 = {
@@ -455,7 +485,7 @@
 				1F8076652A331DF400012724 /* MachoView.swift */,
 				1F8076642A331DF400012724 /* ComponentListView.swift */,
 				1F8076672A331DF400012724 /* HexFiendViewController.swift */,
-				1F80775D2A386DE100012724 /* TranslationView.swift */,
+				1F2FBDEE2AAB5862001080E8 /* TranslationViews */,
 			);
 			path = MachoScene;
 			sourceTree = "<group>";
@@ -519,10 +549,8 @@
 		1F8076312A331DF400012724 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				1F8076332A331DF400012724 /* CPUType.swift */,
-				1F8076342A331DF400012724 /* Translation.swift */,
-				1F8076352A331DF400012724 /* Macho.swift */,
-				1F8076622A331DF400012724 /* SectionHeader.swift */,
+				1F2FBDCD2AAAFEA5001080E8 /* BasicModels */,
+				1F9A81FC2AA1F76900F9E16D /* Translation */,
 				1F8076362A331DF400012724 /* LoadCommand */,
 				1F8076462A331DF400012724 /* MachoComponents */,
 			);
@@ -554,8 +582,6 @@
 		1F8076462A331DF400012724 /* MachoComponents */ = {
 			isa = PBXGroup;
 			children = (
-				1F8076572A331DF400012724 /* MachoBaseElement.swift */,
-				1F8076B62A33362900012724 /* MachoSection.swift */,
 				1F80764F2A331DF400012724 /* ZeroFilledSection.swift */,
 				1F8076562A331DF400012724 /* UnknownSection.swift */,
 				1F8076502A331DF400012724 /* SwiftMetadataComponent.swift */,
@@ -641,6 +667,16 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		1F9A81FC2AA1F76900F9E16D /* Translation */ = {
+			isa = PBXGroup;
+			children = (
+				1F8076342A331DF400012724 /* Translation.swift */,
+				1F2FBDE62AAB01DA001080E8 /* TranslationGroup.swift */,
+				1F2FBDEC2AAB561F001080E8 /* GroupTranslatedSlice.swift */,
+			);
+			path = Translation;
 			sourceTree = "<group>";
 		};
 		1FD8A9812A78D4B500F2AECB /* Views */ = {
@@ -942,13 +978,14 @@
 				1F80748C2A330E8B00012724 /* OpenFileView.swift in Sources */,
 				1F8076CF2A36005700012724 /* HexFiendUtil.m in Sources */,
 				1F8076982A331EB100012724 /* SwiftMetadataComponent.swift in Sources */,
+				1F2FBDE72AAB01DA001080E8 /* TranslationGroup.swift in Sources */,
 				1F80768E2A331EA000012724 /* LCBuildVersion.swift in Sources */,
 				1F8076952A331EAC00012724 /* ExportInfoSection.swift in Sources */,
 				1F80768B2A331EA000012724 /* LCDynamicSymbolTable.swift in Sources */,
 				1F8076972A331EB100012724 /* ZeroFilledSection.swift in Sources */,
+				1F2FBDF22AAB5D44001080E8 /* TranslationView.swift in Sources */,
 				1F8076A82A331EC500012724 /* StringContainer.swift in Sources */,
 				1F8076852A331EA000012724 /* LCLinkedITData.swift in Sources */,
-				1F8076B72A33362900012724 /* MachoSection.swift in Sources */,
 				1FD8A9A52A7938F600F2AECB /* UnixArchiveView.swift in Sources */,
 				1F8076A92A331EC700012724 /* SectionHeader.swift in Sources */,
 				1F8076AC2A331EEE00012724 /* UnixArchive.swift in Sources */,
@@ -960,7 +997,7 @@
 				1F8076912A331EA800012724 /* InstructionSection.swift in Sources */,
 				1F8076A22A331EC200012724 /* SymbolTableEntry.swift in Sources */,
 				1F8076C32A358C6400012724 /* UStringSection.swift in Sources */,
-				1F80769F2A331EB100012724 /* MachoBaseElement.swift in Sources */,
+				1F80769F2A331EB100012724 /* MachoSlice.swift in Sources */,
 				1F80767A2A331E5F00012724 /* ComponentListView.swift in Sources */,
 				1F8076792A331E4F00012724 /* MachoView.swift in Sources */,
 				1FD8A9842A78D4DA00F2AECB /* FatBinaryView.swift in Sources */,
@@ -971,6 +1008,7 @@
 				1F181CE32A4823380014B9D6 /* IPAView.swift in Sources */,
 				1F8076A52A331EC200012724 /* DataInCodeSection.swift in Sources */,
 				1F80769B2A331EB100012724 /* StringTable.swift in Sources */,
+				1F2FBDE92AAB1210001080E8 /* MachoHeader.swift in Sources */,
 				1F8076D02A36005700012724 /* HFController+Mocha.m in Sources */,
 				1F8076BC2A35760C00012724 /* StringSection.swift in Sources */,
 				1FAEE8D32A84BE6900472AE0 /* DocumentWindow.swift in Sources */,
@@ -981,12 +1019,14 @@
 				1F80749C2A33105900012724 /* File.swift in Sources */,
 				1F8076B22A331F2100012724 /* Demangle.swift in Sources */,
 				1F8076942A331EAC00012724 /* OperationCodeSection.swift in Sources */,
+				1F2FBDED2AAB561F001080E8 /* GroupTranslatedSlice.swift in Sources */,
 				1F8076AF2A331F1F00012724 /* TickTock.swift in Sources */,
 				1F181CE12A4822BD0014B9D6 /* IPA.swift in Sources */,
 				1F4674652A83B43200E0AF83 /* FileType.swift in Sources */,
 				1F8076992A331EB100012724 /* FunctionStartsComponent.swift in Sources */,
 				1F8076902A331EA000012724 /* LCEncryptionInfo.swift in Sources */,
-				1F80775E2A386DE100012724 /* TranslationView.swift in Sources */,
+				1F2FBDF02AAB5D35001080E8 /* InstructionTranslationView.swift in Sources */,
+				1F80775E2A386DE100012724 /* GroupTranslationView.swift in Sources */,
 				1F8076A32A331EC200012724 /* IndirectSymbolTableEntry.swift in Sources */,
 				1F80769D2A331EB100012724 /* UnknownSection.swift in Sources */,
 				1F8076822A331EA000012724 /* LCSegment.swift in Sources */,
@@ -1054,6 +1094,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1114,6 +1155,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1143,6 +1185,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"DonQuixote/Preview Content\"";
 				DEVELOPMENT_TEAM = 2273RL2A4R;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1173,6 +1216,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"DonQuixote/Preview Content\"";
 				DEVELOPMENT_TEAM = 2273RL2A4R;
 				ENABLE_HARDENED_RUNTIME = YES;

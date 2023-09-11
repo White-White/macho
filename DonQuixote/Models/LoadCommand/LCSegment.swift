@@ -72,18 +72,17 @@ class LCSegment: LoadCommand {
         super.init(data, type: type, title: type.name + " (\(segmentName))")
     }
     
-    override var commandTranslations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "Segment Name", humanReadable: self.segmentName, translationType: .utf8String(16)))
-        translations.append(Translation(definition: "Virtual Memory Start Address", humanReadable: self.vmaddr.hex, translationType: self.is64Bit ? .uint64 : .uint32))
-        translations.append(Translation(definition: "Virtual Memory Size", humanReadable: self.vmsize.hex, translationType: self.is64Bit ? .uint64 : .uint32))
-        translations.append(Translation(definition: "File Offset", humanReadable: self.segmentFileOff.hex, translationType: self.is64Bit ? .uint64 : .uint32))
-        translations.append(Translation(definition: "Size to Map into Memory", humanReadable: self.segmentSize.hex, translationType: self.is64Bit ? .uint64 : .uint32))
-        translations.append(Translation(definition: "Maximum VM Protection", humanReadable: VMProtection(raw: self.maxprot).humanReadable, translationType: .flags(4)))
-        translations.append(Translation(definition: "Initial VM Protection", humanReadable: VMProtection(raw: self.initprot).humanReadable, translationType: .flags(4)))
-        translations.append(Translation(definition: "Number of Sections", humanReadable: "\(self.numberOfSections)", translationType: .uint32))
-        translations.append(Translation(definition: "Flags", humanReadable: LCSegment.flags(for: self.flags), translationType: .flags(4)))
-        return translations + self.sectionHeaders.flatMap { $0.getTranslations() }
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "Segment Name", humanReadable: self.segmentName, translationType: .utf8String(16))
+        translationGroup.addTranslation(definition: "Virtual Memory Start Address", humanReadable: self.vmaddr.hex, translationType: self.is64Bit ? .uint64 : .uint32)
+        translationGroup.addTranslation(definition: "Virtual Memory Size", humanReadable: self.vmsize.hex, translationType: self.is64Bit ? .uint64 : .uint32)
+        translationGroup.addTranslation(definition: "File Offset", humanReadable: self.segmentFileOff.hex, translationType: self.is64Bit ? .uint64 : .uint32)
+        translationGroup.addTranslation(definition: "Size to Map into Memory", humanReadable: self.segmentSize.hex, translationType: self.is64Bit ? .uint64 : .uint32)
+        translationGroup.addTranslation(definition: "Maximum VM Protection", humanReadable: VMProtection(raw: self.maxprot).humanReadable, translationType: .flags(4))
+        translationGroup.addTranslation(definition: "Initial VM Protection", humanReadable: VMProtection(raw: self.initprot).humanReadable, translationType: .flags(4))
+        translationGroup.addTranslation(definition: "Number of Sections", humanReadable: "\(self.numberOfSections)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Flags", humanReadable: LCSegment.flags(for: self.flags), translationType: .flags(4))
+        (self.sectionHeaders.map { $0.translationGroup }).forEach { translationGroup.merge($0) }
     }
     
     func relocationTable(machoData: Data, machoHeader: MachoHeader) -> RelocationTable? {

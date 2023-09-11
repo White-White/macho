@@ -34,13 +34,11 @@ class LCEncryptionInfo: LoadCommand {
         super.init(data, type: type)
     }
     
-    override var commandTranslations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "Crypto File Offset", humanReadable: self.cryptoOffset.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Crypto File Size", humanReadable: self.cryptoSize.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Crypto ID", humanReadable: "\(self.cryptoID)", translationType: .uint32))
-        if let pad = self.pad { translations.append(Translation(definition: "Crypto Pad", humanReadable: "\(pad)", translationType: .uint32)) }
-        return translations
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "Crypto File Offset", humanReadable: self.cryptoOffset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Crypto File Size", humanReadable: self.cryptoSize.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Crypto ID", humanReadable: "\(self.cryptoID)", translationType: .uint32)
+        if let pad = self.pad { translationGroup.addTranslation(definition: "Crypto Pad", humanReadable: "\(pad)", translationType: .uint32) }
     }
     
 }

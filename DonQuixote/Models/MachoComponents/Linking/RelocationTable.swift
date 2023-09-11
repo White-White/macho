@@ -12,7 +12,7 @@ struct RelocationInfo {
     let sectionName: String
 }
 
-class RelocationTable: MachoBaseElement {
+class RelocationTable: GroupTranslatedMachoSlice {
     
     var relocationEntries: [RelocationEntry] = []
     let relocationInfos: [RelocationInfo]
@@ -22,15 +22,17 @@ class RelocationTable: MachoBaseElement {
         super.init(data, title: "Relocation Table", subTitle: nil)
     }
     
-    override func loadTranslations() async {
+    override func translate() async -> [TranslationGroup] {
+        var translationGroups: [TranslationGroup] = []
         var dataShifter = DataShifter(self.data)
         for relocationInfo in relocationInfos {
             for _ in 0..<relocationInfo.numberOfEntries {
                 let entryData = dataShifter.shift(.rawNumber(RelocationEntry.entrySize))
                 let entry = RelocationEntry(with: entryData, sectionName: relocationInfo.sectionName)
-                await self.save(translations: entry.translations)
+                translationGroups.append(entry.translationGroup)
             }
         }
+        return translationGroups
     }
     
 }

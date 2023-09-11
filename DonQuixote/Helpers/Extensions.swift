@@ -36,7 +36,10 @@ extension Data {
     }
     
     func subSequence(from: Int, count: Int, allowZeroLength: Bool = false) -> Data {
-        if !allowZeroLength && count == .zero { fatalError() }
+        if !allowZeroLength && count == .zero {
+            Log.error("Empty data returned")
+            return Data()
+        }
         guard from + count <= self.count else { fatalError() }
         return self[self.startIndex+from..<self.startIndex+from+count]
     }

@@ -91,22 +91,20 @@ class LCBuildVersion: LoadCommand {
         super.init(data, type: type)
     }
     
-    override var commandTranslations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "Target Platform",
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "Target Platform",
                                         humanReadable: platform?.readable ?? "⚠️ Unknown Platform. Contact the author.",
-                                        translationType: .numberEnum32Bit))
-        translations.append(Translation(definition: "Min OS Version", humanReadable: self.minOSVersion, translationType: .versionString32Bit))
-        translations.append(Translation(definition: "Min SDK Version", humanReadable: self.sdkVersion, translationType: .versionString32Bit))
+                                        translationType: .numberEnum32Bit)
+        translationGroup.addTranslation(definition: "Min OS Version", humanReadable: self.minOSVersion, translationType: .versionString32Bit)
+        translationGroup.addTranslation(definition: "Min SDK Version", humanReadable: self.sdkVersion, translationType: .versionString32Bit)
         for tool in self.buildTools {
-            translations.append(Translation(definition: "Build Tool Name",
+            translationGroup.addTranslation(definition: "Build Tool Name",
                                             humanReadable: tool.toolType.readable,
-                                            translationType: .numberEnum32Bit))
-            translations.append(Translation(definition: "Build Tool Version",
+                                            translationType: .numberEnum32Bit)
+            translationGroup.addTranslation(definition: "Build Tool Version",
                                             humanReadable: "(\(tool.version)",
-                                            translationType: .versionString32Bit))
+                                            translationType: .versionString32Bit)
         }
-        return translations
     }
     
     static func version(for value: UInt32) -> String {

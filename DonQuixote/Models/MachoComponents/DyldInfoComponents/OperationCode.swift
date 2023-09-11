@@ -30,32 +30,31 @@ struct DyldInfoLEB {
 
 struct OperationCode<CodeMetadata: OperationCodeMetadataProtocol> {
     
+    let dataStartIndex: Int
     let codeMetadata: CodeMetadata
     let lebValues: [DyldInfoLEB]
     let cstringData: Data?
     let numberOfTranslations: Int
-    
-    var translations: [Translation] {
-        
-        var translations: [Translation] = []
-        
-        translations.append(Translation(definition: "Operation Code (Upper 4 bits)", humanReadable: codeMetadata.operationReadable(),
+
+    var translationGroup: TranslationGroup {
+        let translationGroup = TranslationGroup(dataStartIndex: self.dataStartIndex)
+        translationGroup.addTranslation(definition: "Operation Code (Upper 4 bits)", humanReadable: codeMetadata.operationReadable(),
                                         translationType: .flags(1),
-                                        extraDefinition: "Immediate Value Used As (Lower 4 bits)", extraHumanReadable: codeMetadata.immediateReadable()))
+                                        extraDefinition: "Immediate Value Used As (Lower 4 bits)", extraHumanReadable: codeMetadata.immediateReadable())
         
-        translations.append(contentsOf: lebValues.map { ulebValue in
-            Translation(definition: "LEB Value", humanReadable: ulebValue.isSigned ? "\(Int(bitPattern: UInt(ulebValue.raw)))" : "\(ulebValue.raw)", translationType: .uleb(ulebValue.byteCount))
-        })
+        for ulebValue in lebValues {
+            translationGroup.addTranslation(definition: "LEB Value", humanReadable: ulebValue.isSigned ? "\(Int(bitPattern: UInt(ulebValue.raw)))" : "\(ulebValue.raw)", translationType: .uleb(ulebValue.byteCount))
+        }
         
         if let cstringData = cstringData {
             let cstring = cstringData.utf8String ?? "🙅‍♂️ Invalid CString"
-            translations.append(Translation(definition: "String", humanReadable: cstring, translationType: .utf8String(cstringData.count)))
+            translationGroup.addTranslation(definition: "String", humanReadable: cstring, translationType: .utf8String(cstringData.count))
         }
-        
-        return translations
+        return translationGroup
     }
     
-    init(operationCode: CodeMetadata, lebValues:[DyldInfoLEB], cstringData: Data?) {
+    init(dataStartIndex: Int, operationCode: CodeMetadata, lebValues:[DyldInfoLEB], cstringData: Data?) {
+        self.dataStartIndex = dataStartIndex
         self.codeMetadata = operationCode
         self.lebValues = lebValues
         self.cstringData = cstringData

@@ -48,14 +48,12 @@ class LCLinkedITData: LoadCommand {
         super.init(data, type: type)
     }
     
-    override var commandTranslations: [Translation] {
-        return [
-            Translation(definition: "File Offset", humanReadable: self.containedDataFileOffset.hex, translationType: .uint32),
-            Translation(definition: "Size", humanReadable: self.containedDataSize.hex, translationType: .uint32)
-        ]
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "File Offset", humanReadable: self.containedDataFileOffset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Size", humanReadable: self.containedDataSize.hex, translationType: .uint32)
     }
     
-    func linkedITSection(from machoData:Data, machoHeader: MachoHeader, textSegmentLoadCommand: LCSegment?, symbolTable: SymbolTable?) -> MachoBaseElement {
+    func linkedITSection(from machoData:Data, machoHeader: MachoHeader, textSegmentLoadCommand: LCSegment?, symbolTable: SymbolTable?) -> MachoSlice {
         let is64Bit = machoHeader.is64Bit
         let data = machoData.subSequence(from: Int(self.containedDataFileOffset), count: Int(self.containedDataSize), allowZeroLength: true)
         switch self.type {

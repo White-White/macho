@@ -7,15 +7,16 @@
 
 import Foundation
 
-class OperationCodeSection<Code: OperationCodeMetadataProtocol>: MachoBaseElement {
+class OperationCodeSection<Code: OperationCodeMetadataProtocol>: GroupTranslatedMachoSlice {
     
     private(set) var operationCodes: [OperationCode<Code>] = []
     
-    override func loadTranslations() async {
+    override func initialize() async {
         self.operationCodes = OperationCodeSection.operationCodes(from: self.data)
-        for operationCode in operationCodes {
-            await self.save(translations: operationCode.translations)
-        }
+    }
+    
+    override func translate() async -> [TranslationGroup] {
+        self.operationCodes.map { $0.translationGroup }
     }
     
     // parsing
@@ -24,6 +25,8 @@ class OperationCodeSection<Code: OperationCodeMetadataProtocol>: MachoBaseElemen
         var operationCodes: [OperationCode<Code>] = []
         var index: Int = 0
         while index < rawData.count {
+            let startIndex = index
+            
             let byte = rawData[rawData.startIndex+index]; index += 1
             let operationCodeValue = byte & 0xf0 // mask the most significant 4 bits
             let immediateValue = byte & 0x0f // mask the least significant 4 bits
@@ -65,7 +68,7 @@ class OperationCodeSection<Code: OperationCodeMetadataProtocol>: MachoBaseElemen
                 cstringData = rawData[rawData.startIndex+cstringStartIndex..<rawData.startIndex+index]
             }
             
-            operationCodes.append(OperationCode<Code>.init(operationCode: operationCode, lebValues: lebValues, cstringData: cstringData))
+            operationCodes.append(OperationCode<Code>.init(dataStartIndex: startIndex, operationCode: operationCode, lebValues: lebValues, cstringData: cstringData))
         }
         
         return operationCodes

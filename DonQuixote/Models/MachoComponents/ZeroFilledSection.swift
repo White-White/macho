@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ZeroFilledSection: MachoBaseElement {
+class ZeroFilledSection: GroupTranslatedMachoSlice {
     
     let runtimeSize: Int
     
@@ -16,10 +16,12 @@ class ZeroFilledSection: MachoBaseElement {
         super.init(Data(), /* dummy data */ title: title, subTitle: nil)
     }
     
-    override func loadTranslations() async {
-        await self.save(translations: [Translation(definition: "Zero Filled Section",
-                                                              humanReadable: "This section has no data in the macho file.\nIts in memory size is \(runtimeSize.hex)",
-                                                              translationType: .rawData(0))])
+    override func translate() async -> [TranslationGroup] {
+        let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
+        translationGroup.addTranslation(definition: "Zero Filled Section",
+                                        humanReadable: "This section has no data in the macho file.\nIts in memory size is \(runtimeSize.hex)",
+                                        translationType: .rawData(0))
+        return [translationGroup]
     }
     
 }

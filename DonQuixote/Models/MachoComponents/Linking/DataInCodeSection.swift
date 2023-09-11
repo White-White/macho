@@ -35,39 +35,44 @@ struct DataInCodeEntry {
     let offset: UInt32
     let length: UInt16
     let kind: DataInCodeKind
+    let dataStartIndex: Int
     
     init(with data: Data) {
+        self.dataStartIndex = data.startIndex
         var dataShifter = DataShifter(data)
         self.offset = dataShifter.shift(.doubleWords).UInt32
         self.length = dataShifter.shift(.word).UInt16
         self.kind = DataInCodeKind(rawValue: dataShifter.shift(.word).UInt16)! /* crash if unknown kind. unlikely */
     }
     
-    var translations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "File Offset", humanReadable: self.offset.hex, translationType: .uint32))
-        translations.append(Translation(definition: "Size", humanReadable: "\(self.length)", translationType: .uint16))
-        translations.append(Translation(definition: "Kind", humanReadable: self.kind.name, translationType: .numberEnum16Bit))
-        return translations
+    var translationGroup: TranslationGroup {
+        let translationGroup = TranslationGroup(dataStartIndex: self.dataStartIndex)
+        translationGroup.addTranslation(definition: "File Offset", humanReadable: self.offset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Size", humanReadable: "\(self.length)", translationType: .uint16)
+        translationGroup.addTranslation(definition: "Kind", humanReadable: self.kind.name, translationType: .numberEnum16Bit)
+        return translationGroup
     }
     
     static var EntrySize: Int { 8 }
     
 }
 
-class DataInCodeSection: MachoBaseElement {
+class DataInCodeSection: GroupTranslatedMachoSlice {
     
     private var dataInCodeEntries: [DataInCodeEntry] = []
-
-    override func loadTranslations() async {
+    
+    override func initialize() async {
         let modelSize = DataInCodeEntry.EntrySize
         let numberOfModels = self.dataSize/modelSize
         for index in 0..<numberOfModels {
             let data = self.data.subSequence(from: index * modelSize, count: modelSize)
             let entry = DataInCodeEntry(with: data)
             self.dataInCodeEntries.append(entry)
-            await self.save(translations: entry.translations)
         }
+    }
+
+    override func translate() async -> [TranslationGroup] {
+        self.dataInCodeEntries.map { $0.translationGroup }
     }
     
 }

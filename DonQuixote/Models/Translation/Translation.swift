@@ -100,15 +100,10 @@ enum TranslationDataType {
     
 }
 
-struct Translation: Equatable, Identifiable {
+struct Translation: Identifiable {
     
-    static func == (lhs: Translation, rhs: Translation) -> Bool {
-        lhs.rangeInMacho == rhs.rangeInMacho
-    }
-    
-    var rangeInMacho: Range<UInt64>?
-    var id: UInt64 { rangeInMacho!.startIndex }
-    
+    var id: Range<UInt64> { dataRangeInMacho }
+    let dataRangeInMacho: Range<UInt64>
     let definition: String?
     let humanReadable: String
     let translationType: TranslationDataType
@@ -118,13 +113,15 @@ struct Translation: Equatable, Identifiable {
     let extraHumanReadable: String?
     let error: String?
     
-    init(definition: String?,
+    init(dataRangeInMacho: Range<UInt64>,
+         definition: String?,
          humanReadable: String,
          translationType: TranslationDataType,
          extraDefinition: String? = nil,
          extraHumanReadable: String? = nil,
          error: String? = nil) {
         
+        self.dataRangeInMacho = dataRangeInMacho
         self.definition = definition
         self.humanReadable = humanReadable
         self.translationType = translationType
@@ -133,25 +130,5 @@ struct Translation: Equatable, Identifiable {
         self.error = error
         
     }
-    
-    mutating func updateRange(with rangeInMacho: Range<UInt64>) {
-        self.rangeInMacho = rangeInMacho
-    }
-    
-}
-
-struct TranslationGroup: Identifiable {
-    
-    let translations: [Translation]
-    
-    var dataRangeInMacho: Range<UInt64>? {
-        if let start = translations.first?.rangeInMacho?.startIndex,
-           let end = translations.last?.rangeInMacho?.endIndex {
-            return start..<end
-        }
-        return nil
-    }
-    
-    var id: UInt64 { dataRangeInMacho!.startIndex }
     
 }

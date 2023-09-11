@@ -10,11 +10,12 @@ import Foundation
 protocol SwiftMetadata {
     static var dataSize: Int { get }
     init(data: Data)
-    var translations: [Translation] { get }
+    var translationGroup: TranslationGroup { get }
 }
 
 struct ProtocolDescriptor: SwiftMetadata {
     
+    let dataStartIndex: Int
     let flags: UInt32
     let parent: Int32
     let name: Int32
@@ -23,6 +24,7 @@ struct ProtocolDescriptor: SwiftMetadata {
     let associatedTypeNames: Int32
     
     init(data: Data) {
+        self.dataStartIndex = data.startIndex
         guard data.count == Self.dataSize else { fatalError() }
         var dataShifter = DataShifter(data)
         self.flags = dataShifter.shiftUInt32()
@@ -33,15 +35,15 @@ struct ProtocolDescriptor: SwiftMetadata {
         self.associatedTypeNames = dataShifter.shiftInt32()
     }
     
-    var translations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "flags", humanReadable: self.flags.hex, translationType: .uint32))
-        translations.append(Translation(definition: "parent", humanReadable: self.parent.hex, translationType: .uint32))
-        translations.append(Translation(definition: "name", humanReadable: self.name.hex, translationType: .uint32))
-        translations.append(Translation(definition: "numRequirementsInSignature", humanReadable: self.numRequirementsInSignature.hex, translationType: .uint32))
-        translations.append(Translation(definition: "numRequirements", humanReadable: self.numRequirements.hex, translationType: .uint32))
-        translations.append(Translation(definition: "associatedTypeNames", humanReadable: self.associatedTypeNames.hex, translationType: .uint32))
-        return translations
+    var translationGroup: TranslationGroup {
+        let translationGroup = TranslationGroup(dataStartIndex: self.dataStartIndex)
+        translationGroup.addTranslation(definition: "flags", humanReadable: self.flags.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "parent", humanReadable: self.parent.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "name", humanReadable: self.name.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "numRequirementsInSignature", humanReadable: self.numRequirementsInSignature.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "numRequirements", humanReadable: self.numRequirements.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "associatedTypeNames", humanReadable: self.associatedTypeNames.hex, translationType: .uint32)
+        return translationGroup
     }
     
     static var dataSize: Int { 24 }
@@ -50,12 +52,14 @@ struct ProtocolDescriptor: SwiftMetadata {
 
 struct ProtocolConformanceDescriptor: SwiftMetadata {
     
+    let dataStartIndex: Int
     let protocolDescriptor: Int32
     let nominalTypeDescriptor: Int32
     let protocolWitnessTable: Int32
     let conformanceFlags: UInt32
     
     init(data: Data) {
+        self.dataStartIndex = data.startIndex
         guard data.count == Self.dataSize else { fatalError() }
         var dataShifter = DataShifter(data)
         self.protocolDescriptor = dataShifter.shiftInt32()
@@ -64,13 +68,13 @@ struct ProtocolConformanceDescriptor: SwiftMetadata {
         self.conformanceFlags = dataShifter.shiftUInt32()
     }
     
-    var translations: [Translation] {
-        var translations: [Translation] = []
-        translations.append(Translation(definition: "protocolDescriptor", humanReadable: self.protocolDescriptor.hex, translationType: .uint32))
-        translations.append(Translation(definition: "nominalTypeDescriptor", humanReadable: self.nominalTypeDescriptor.hex, translationType: .uint32))
-        translations.append(Translation(definition: "protocolWitnessTable", humanReadable: self.protocolWitnessTable.hex, translationType: .uint32))
-        translations.append(Translation(definition: "conformanceFlags", humanReadable: self.conformanceFlags.hex, translationType: .uint32))
-        return translations
+    var translationGroup: TranslationGroup {
+        let translationGroup = TranslationGroup(dataStartIndex: self.dataStartIndex)
+        translationGroup.addTranslation(definition: "protocolDescriptor", humanReadable: self.protocolDescriptor.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "nominalTypeDescriptor", humanReadable: self.nominalTypeDescriptor.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "protocolWitnessTable", humanReadable: self.protocolWitnessTable.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "conformanceFlags", humanReadable: self.conformanceFlags.hex, translationType: .uint32)
+        return translationGroup
     }
     
     static var dataSize: Int { 16 }
@@ -83,16 +87,18 @@ struct SwiftMetadataContainer<MetaData: SwiftMetadata> {
     let targetOffsetInMacho: Int
     let associatedMetadata: MetaData?
     
-    var translations: [Translation] {
-        if let associatedMetadata = associatedMetadata {
-            return associatedMetadata.translations
-        } else {
-            return [Translation(definition: "FIXME: unknown", humanReadable: "UNKNOWN", translationType: .flags(MetaData.dataSize))]
+    var translationGroup: TranslationGroup {
+        if let associatedMetadata {
+            return associatedMetadata.translationGroup
         }
+        let translationGroup = TranslationGroup(dataStartIndex: self.targetOffsetInMacho)
+        translationGroup.addTranslation(definition: "FIXME: unknown", humanReadable: "UNKNOWN", translationType: .flags(MetaData.dataSize))
+        return translationGroup
     }
+    
 }
 
-class SwiftMetadataSection<MetaData: SwiftMetadata>: MachoBaseElement {
+class SwiftMetadataSection<MetaData: SwiftMetadata>: GroupTranslatedMachoSlice {
     
     private let swiftMetadataContainers: [SwiftMetadataContainer<MetaData>]
     
@@ -118,8 +124,8 @@ class SwiftMetadataSection<MetaData: SwiftMetadata>: MachoBaseElement {
         super.init(data, title: title, subTitle: nil)
     }
     
-    override func loadTranslations() async {
-        
+    override func translate() async -> [TranslationGroup] {
+        return []
     }
     
 //    func swiftMetadata(at targetOffsetInMacho: Int) -> MetaData? {

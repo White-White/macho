@@ -16,7 +16,7 @@ struct FunctionStart {
 // a great description for function start section data format
 // https://stackoverflow.com/questions/9602438/mach-o-file-lc-function-starts-load-command
 
-class FunctionStartsSection: MachoBaseElement {
+class FunctionStartsSection: GroupTranslatedMachoSlice {
     
     let symbolTable: SymbolTable?
     let textSegmentVirtualAddress: Swift.UInt64
@@ -52,35 +52,25 @@ class FunctionStartsSection: MachoBaseElement {
         super.init(data, title: title, subTitle: nil)
     }
     
-    override func loadTranslations() async {
-        let translations = await withTaskGroup(of: Translation.self, body: { taskGroup in
-            for functionStart in functionStarts {
-                taskGroup.addTask {
-                    await self.translation(for: functionStart)
-                }
-            }
-            return await taskGroup.reduce(into: [Translation]()) { partialResult, translation in
-                partialResult.append(translation)
-            }
-        })
-        await self.save(translations: translations)
-    }
-    
-    private func translation(for functionStart: FunctionStart) async -> Translation {
-        var symbolName: String = ""
-        let functionVirtualAddress = functionStart.address + textSegmentVirtualAddress
-        
-        await self.symbolTable?.findSymbol(byVirtualAddress: functionVirtualAddress, callerTag: self.title)?.forEach({ symbolTableEntry in
-            guard symbolTableEntry.symbolType == .section else { return }
-            symbolName += symbolTableEntry.symbolName
-        })
-        
-        let translation = Translation(definition: "Vitual Address",
-                                      humanReadable: (functionStart.address + textSegmentVirtualAddress).hex,
-                                      translationType: .uleb128(functionStart.byteLength),
-                                      extraDefinition: "Referred Symbol Name",
-                                      extraHumanReadable: symbolName)
-        return translation
+    override func translate() async -> [TranslationGroup] {
+        let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
+        for functionStart in self.functionStarts {
+            var symbolName: String = ""
+            let functionVirtualAddress = functionStart.address + textSegmentVirtualAddress
+            
+            await self.symbolTable?.findSymbol(byVirtualAddress: functionVirtualAddress, callerTag: self.title)?.forEach({ symbolTableEntry in
+                guard symbolTableEntry.symbolType == .section else { return }
+                symbolName += symbolTableEntry.symbolName
+            })
+            
+            translationGroup.addTranslation(definition: "Vitual Address",
+                                            humanReadable: (functionStart.address + textSegmentVirtualAddress).hex,
+                                            translationType: .uleb128(functionStart.byteLength),
+                                            extraDefinition: "Referred Symbol Name",
+                                            extraHumanReadable: symbolName)
+            
+        }
+        return [translationGroup]
     }
     
 }

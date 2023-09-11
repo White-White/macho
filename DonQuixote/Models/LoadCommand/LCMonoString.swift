@@ -20,10 +20,9 @@ class LCMonoString: LoadCommand {
         super.init(data, type: type)
     }
     
-    override var commandTranslations: [Translation] {
-        return [
-            Translation(definition: "String Offset", humanReadable: self.stringOffset.hex, translationType: .uint32),
-            Translation(definition: "Content", humanReadable: string, translationType: .utf8String(self.stringLength))
-        ]
+    override func addCommandTranslation(to translationGroup: TranslationGroup) {
+        translationGroup.addTranslation(definition: "String Offset", humanReadable: self.stringOffset.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Content", humanReadable: string, translationType: .utf8String(self.stringLength))
     }
+    
 }
