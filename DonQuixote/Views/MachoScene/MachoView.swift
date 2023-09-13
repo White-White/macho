@@ -40,19 +40,30 @@ import SwiftUI
 //
 //}
 
-struct MachoViewSelection {
+struct MachoViewState {
     
     var selectedMachoSlice: MachoSlice
-    var selectedTranslation: Translation?
-    var coloredDataRange: Range<UInt64>? = nil
-    var selectedDataRange: Range<UInt64>? = nil
+    var selectedTranslationMetaInfo: TranslationMetaInfo
+    private(set) var coloredDataRange: HexFiendDataRange
+    private(set) var selectedDataRange: HexFiendDataRange
     
-    func isSelected(_ machoSlice: MachoSlice) -> Bool {
-        self.selectedMachoSlice == machoSlice
+    init(selectedMachoSlice: MachoSlice, selectedTranslationMetaInfo: TranslationMetaInfo, coloredDataRange: HexFiendDataRange, selectedDataRange: HexFiendDataRange) {
+        self.selectedMachoSlice = selectedMachoSlice
+        self.selectedTranslationMetaInfo = selectedTranslationMetaInfo
+        self.coloredDataRange = coloredDataRange
+        self.selectedDataRange = selectedDataRange
     }
     
-    mutating func select(_ machoSlice: MachoSlice) {
-        self.selectedMachoSlice = machoSlice
+    mutating func update(coloredDataRange: HexFiendDataRange) {
+        if self.coloredDataRange != coloredDataRange {
+            self.coloredDataRange = coloredDataRange
+        }
+    }
+    
+    mutating func update(selectedDataRange: HexFiendDataRange) {
+        if self.selectedDataRange != selectedDataRange {
+            self.selectedDataRange = selectedDataRange
+        }
     }
     
 }
@@ -62,40 +73,57 @@ struct MachoViewSelection {
 struct MachoView: DocumentView {
     
     let macho: Macho
-    @State var machoViewSelection: MachoViewSelection
+    @State var machoViewState: MachoViewState
     
     init(_ macho: Macho) {
         self.macho = macho
-        self.machoViewSelection = MachoViewSelection(selectedMachoSlice: macho.machoHeader)
+        let machoHeader = macho.machoHeader
+        let firstTranslation = machoHeader.translationGroup.translations.first!
+        self.machoViewState = MachoViewState(selectedMachoSlice: machoHeader,
+                                             selectedTranslationMetaInfo: firstTranslation.metaInfo,
+                                             coloredDataRange: machoHeader.translationGroup.dataRangeInMacho,
+                                             selectedDataRange: firstTranslation.metaInfo.dataRangeInMacho)
     }
     
     var body: some View {
         HStack(spacing: 4) {
             
-            HexFiendViewControllerRepresentable(data: macho.machoData, machoViewSelection: $machoViewSelection, clickingHexViewCallBack: self.onClickHexView)
+            HexFiendViewControllerRepresentable(data: macho.machoData, machoViewState: $machoViewState)
+                .onClickHexView({ dataIndex in
+                    Task {
+                        await self.onClickHexView(at: dataIndex)
+                    }
+                })
                 .border(.separator, width: 1)
             
             ScrollViewReader { scrollViewProxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(self.macho.allSlices) { machoSlice in
-                            ComponentListCell(machoSlice: machoSlice, isSelected: machoViewSelection.isSelected(machoSlice))
+                            ComponentListCell(machoSlice: machoSlice, isSelected: machoViewState.selectedMachoSlice == machoSlice)
                                 .onTapGesture {
-                                    self.machoViewSelection.select(machoSlice)
+                                    self.machoViewState.selectedMachoSlice = machoSlice
+                                    if let searchResult = machoSlice.searchForFirstTranslationMetaInfo() {
+                                        self.machoViewState.selectedTranslationMetaInfo = searchResult.translationMetaInfo
+                                        self.machoViewState.update(coloredDataRange: searchResult.enclosedDataRange)
+                                        self.machoViewState.update(selectedDataRange: searchResult.translationMetaInfo.dataRangeInMacho)
+                                    } else {
+                                        self.machoViewState.update(coloredDataRange: machoSlice.dataRangeInMacho)
+                                    }
                                 }
                         }
                     }
                 }
                 .border(.separator, width: 1)
                 .frame(width: ComponentListCell.widthNeeded(for: self.macho.allSlices))
-//                .onChange(of: machoViewState.selectedMachoSlice) { newValue in
-//                    withAnimation {
-//                        scrollViewProxy.scrollTo(newValue.id)
-//                    }
-//                }
+                .onChange(of: machoViewState.selectedMachoSlice) { newValue in
+                    withAnimation {
+                        scrollViewProxy.scrollTo(newValue.id)
+                    }
+                }
             }
             
-            TranslationView(machoViewSelection: $machoViewSelection)
+            TranslationView(machoViewState: $machoViewState)
                 
         }
         .padding(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
@@ -109,39 +137,26 @@ struct MachoView: DocumentView {
 //        }
     }
     
-    
-    @State var existingSearchTask: Task<(), Never>?
-    func onClickHexView(at dataIndexInMacho: UInt64) {
+    @MainActor
+    func onClickHexView(at dataIndexInMacho: UInt64) async {
         
-        
-        guard let machoSliceFound = (self.macho.allSlices.binarySearch { element in
+        let machoSlice = self.macho.allSlices.binarySearch { element in
             if element.data.startIndex > dataIndexInMacho {
-                return .searchLeft
+                return .left
             } else if element.data.endIndex <= dataIndexInMacho {
-                return .searchRight
+                return .right
             } else {
                 return .matched
             }
-        }) else { return }
-        
-        self.machoViewSelection.selectedMachoSlice = machoSliceFound
-        
-        
-        existingSearchTask?.cancel()
-        existingSearchTask = nil
-        existingSearchTask = Task {
-            Task {
-                let searchResult = await machoSliceFound.searchForTranslation(with: dataIndexInMacho)
-                
-                Task { @MainActor in
-                    self.machoViewSelection.selectedTranslation = searchResult?.translation
-                    self.machoViewSelection.coloredDataRange = searchResult?.translationGroup?.dataRangeInMacho
-                    self.machoViewSelection.selectedDataRange = searchResult?.translation?.dataRangeInMacho
-                }
-                
-            }
-            
         }
+        
+        if let machoSlice, let searchResult = await machoSlice.searchForTranslationMetaInfo(at: dataIndexInMacho) {
+            self.machoViewState.selectedMachoSlice = machoSlice
+            self.machoViewState.selectedTranslationMetaInfo = searchResult.translationMetaInfo
+            self.machoViewState.update(coloredDataRange: searchResult.enclosedDataRange)
+            self.machoViewState.update(selectedDataRange: searchResult.translationMetaInfo.dataRangeInMacho)
+        }
+        
     }
     
 }

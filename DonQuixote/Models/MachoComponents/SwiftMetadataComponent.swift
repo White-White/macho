@@ -124,7 +124,7 @@ class SwiftMetadataSection<MetaData: SwiftMetadata>: GroupTranslatedMachoSlice {
         super.init(data, title: title, subTitle: nil)
     }
     
-    override func translate() async -> [TranslationGroup] {
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
         return []
     }
     

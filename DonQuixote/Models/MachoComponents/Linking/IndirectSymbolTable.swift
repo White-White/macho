@@ -29,7 +29,7 @@ class IndirectSymbolTable: GroupTranslatedMachoSlice {
         }
     }
     
-    override func translate() async -> [TranslationGroup] {
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
         var translationGroups: [TranslationGroup] = []
         for entry in indirectSymbolTableEntries {
             translationGroups.append(await entry.translationGroup)

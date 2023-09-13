@@ -16,7 +16,7 @@ class ZeroFilledSection: GroupTranslatedMachoSlice {
         super.init(Data(), /* dummy data */ title: title, subTitle: nil)
     }
     
-    override func translate() async -> [TranslationGroup] {
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
         let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
         translationGroup.addTranslation(definition: "Zero Filled Section",
                                         humanReadable: "This section has no data in the macho file.\nIts in memory size is \(runtimeSize.hex)",

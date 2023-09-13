@@ -29,6 +29,7 @@ class MachoSlice: Identifiable, Equatable, Hashable, @unchecked Sendable {
     let data: Data
     var dataSize: Int { data.count }
     var offsetInMacho: Int { data.startIndex }
+    var dataRangeInMacho: HexFiendDataRange { HexFiendDataRange(lowerBound: UInt64(self.offsetInMacho), length: UInt64(self.dataSize)) }
     
     let title: String
     let subTitle: String?
@@ -40,16 +41,17 @@ class MachoSlice: Identifiable, Equatable, Hashable, @unchecked Sendable {
         self.subTitle = subTitle
     }
     
-    func initialize() async {
-        
+    struct SearchResult {
+        let enclosedDataRange: HexFiendDataRange
+        let translationMetaInfo: TranslationMetaInfo
     }
     
-    struct TranslationSearchResult {
-        let translationGroup: TranslationGroup?
-        let translation: Translation?
+    func searchForTranslationMetaInfo(at dataIndexInMacho: UInt64) async -> SearchResult? {
+        fatalError()
     }
     
-    func searchForTranslation(with targetDataIndex: UInt64) async -> TranslationSearchResult? {
+    @MainActor
+    func searchForFirstTranslationMetaInfo() -> SearchResult? {
         fatalError()
     }
     
@@ -65,7 +67,11 @@ class MachoTranslatedSlice<TranslationResult: Sendable>: MachoSlice, ObservableO
         self.load()
     }
     
-    func translate() async -> TranslationResult {
+    func initialize() async {
+        
+    }
+    
+    func translate(_ progressNotifier: @escaping (Float) -> Void) async -> TranslationResult {
         fatalError()
     }
     
@@ -93,7 +99,11 @@ extension MachoTranslatedSlice {
                 self.loadingStatus = .translating(.zero)
             }
             
-            let translationResult = await self.translate()
+            let translationResult = await self.translate({ progress in
+                Task { @MainActor in
+                    self.loadingStatus = .translating(progress)
+                }
+            })
             tick.tock("Translate " + self.readableTag, threshHold: 10)
             
             Task { @MainActor in

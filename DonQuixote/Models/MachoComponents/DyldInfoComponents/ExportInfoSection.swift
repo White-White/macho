@@ -152,7 +152,7 @@ class ExportInfoSection: GroupTranslatedMachoSlice {
         self.exportInfoNodes = ExportInfoSection.allNodes(from: root, in: data).sorted { $0.startOffsetInMacho < $1.startOffsetInMacho }
     }
     
-    override func translate() async -> [TranslationGroup] {
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
         return self.exportInfoNodes.map { $0.translationGrouup }
     }
     

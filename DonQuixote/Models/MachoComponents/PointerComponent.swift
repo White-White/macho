@@ -30,7 +30,7 @@ class PointerComponent: GroupTranslatedMachoSlice {
         }
     }
     
-    override func translate() async -> [TranslationGroup] {
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
         let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
         for (index, pointerValue) in self.pointerValues.enumerated() {
             await self.addTranslation(for: pointerValue, index: index, to: translationGroup)

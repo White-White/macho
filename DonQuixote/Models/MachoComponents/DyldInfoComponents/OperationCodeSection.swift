@@ -15,7 +15,7 @@ class OperationCodeSection<Code: OperationCodeMetadataProtocol>: GroupTranslated
         self.operationCodes = OperationCodeSection.operationCodes(from: self.data)
     }
     
-    override func translate() async -> [TranslationGroup] {
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
         self.operationCodes.map { $0.translationGroup }
     }
     

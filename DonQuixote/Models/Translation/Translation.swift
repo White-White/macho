@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TranslationDataType {
+enum TranslationType {
     
     case uint8
     case uint16
@@ -71,7 +71,7 @@ enum TranslationDataType {
         }
     }
     
-    var bytesCount: Int {
+    fileprivate var bytesCount: Int {
         switch self {
         case .uint8, .int8, .numberEnum8Bit:
             return Straddle.byte.raw
@@ -100,35 +100,47 @@ enum TranslationDataType {
     
 }
 
+struct TranslationMetaInfo: Identifiable, Equatable {
+    
+    static func == (lhs: TranslationMetaInfo, rhs: TranslationMetaInfo) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    let dataIndexInMacho: Int
+    let type: TranslationType
+    
+    var id: Range<UInt64> { dataRangeInMacho.rawRange }
+    var bytesCount: Int { type.bytesCount }
+    var dataRangeInMacho: HexFiendDataRange { HexFiendDataRange(lowerBound: UInt64(dataIndexInMacho),
+                                                                length: UInt64(bytesCount)) }
+    
+}
+
 struct Translation: Identifiable {
     
-    var id: Range<UInt64> { dataRangeInMacho }
-    let dataRangeInMacho: Range<UInt64>
+    let metaInfo: TranslationMetaInfo
+    var id: Range<UInt64> { metaInfo.id }
+    
     let definition: String?
     let humanReadable: String
-    let translationType: TranslationDataType
-    var bytesCount: Int { translationType.bytesCount }
     
     let extraDefinition: String?
     let extraHumanReadable: String?
     let error: String?
     
-    init(dataRangeInMacho: Range<UInt64>,
+    init(dataIndexInMacho: Int,
          definition: String?,
          humanReadable: String,
-         translationType: TranslationDataType,
+         translationType: TranslationType,
          extraDefinition: String? = nil,
          extraHumanReadable: String? = nil,
          error: String? = nil) {
-        
-        self.dataRangeInMacho = dataRangeInMacho
+        self.metaInfo = TranslationMetaInfo(dataIndexInMacho: dataIndexInMacho, type: translationType)
         self.definition = definition
         self.humanReadable = humanReadable
-        self.translationType = translationType
         self.extraDefinition = extraDefinition
         self.extraHumanReadable = extraHumanReadable
         self.error = error
-        
     }
     
 }

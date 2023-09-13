@@ -82,7 +82,12 @@ class LCSegment: LoadCommand {
         translationGroup.addTranslation(definition: "Initial VM Protection", humanReadable: VMProtection(raw: self.initprot).humanReadable, translationType: .flags(4))
         translationGroup.addTranslation(definition: "Number of Sections", humanReadable: "\(self.numberOfSections)", translationType: .uint32)
         translationGroup.addTranslation(definition: "Flags", humanReadable: LCSegment.flags(for: self.flags), translationType: .flags(4))
-        (self.sectionHeaders.map { $0.translationGroup }).forEach { translationGroup.merge($0) }
+    }
+    
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
+        let loadCommandTranslationGroups = await super.translate(progressNotifier)
+        let sectionHeaderTranslationGroups = (self.sectionHeaders.map { $0.translationGroup })
+        return loadCommandTranslationGroups + sectionHeaderTranslationGroups
     }
     
     func relocationTable(machoData: Data, machoHeader: MachoHeader) -> RelocationTable? {

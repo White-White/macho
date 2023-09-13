@@ -8,6 +8,50 @@
 import SwiftUI
 import AppKit
 
+struct HexFiendDataRange: Equatable {
+    
+    var isValidValue: Bool {
+        length != 0
+    }
+    
+    let lowerBound: UInt64
+    let length: UInt64
+    var upperBound: UInt64 {
+        lowerBound + length
+    }
+    
+    var rawRange: Range<UInt64> {
+        lowerBound..<upperBound
+    }
+    
+    var hfHiglightedColorRange: HFColorRange {
+        let colorRange = HFColorRange()
+        colorRange.range = self.hfRangeWrapper
+        colorRange.color = NSColor.init(calibratedWhite: 212.0/255.0, alpha: 1)
+        return colorRange
+    }
+    
+    var hfSelectedColorRange: HFColorRange {
+        let colorRange = HFColorRange()
+        colorRange.range = self.hfRangeWrapper
+        colorRange.color = NSColor.selectedTextBackgroundColor
+        return colorRange
+    }
+    
+    var hfRangeWrapper: HFRangeWrapper {
+        if self.isValidValue {
+            return HFRangeWrapper.withRange(HFRangeMake(self.lowerBound, self.length))
+        } else {
+            return HFRangeWrapper.withRange(HFRange(location: 0, length: 0))
+        }
+    }
+    
+    static func zero() -> HexFiendDataRange {
+        HexFiendDataRange(lowerBound: 0, length: 0)
+    }
+    
+}
+
 protocol HexFiendViewControllerDelegate: NSObjectProtocol {
     func didClickHexView(at charIndex: UInt64)
 }
@@ -69,47 +113,19 @@ public class HexFiendViewController: NSViewController {
         self.hfController.setController(self)
     }
     
-    var selectedDataRange: Range<UInt64>?
-    var selectedComponentDataRange: Range<UInt64>?
-    
-    func updateSelectedDataRange(with range: Range<UInt64>?, autoScroll: Bool) {
-        if let range {
-            self.hfController.selectedContentsRanges = [HexFiendViewController.hfRangeWrapper(from: range)]
-            if autoScroll {
-                self.scrollHexView(basedOn: range)
-            }
-        } else {
-            self.hfController.selectedContentsRanges = [HFRangeWrapper.withRange(HFRange(location: 0, length: 0))]
+    func updateDataRange(highlightedRange: HexFiendDataRange, selectedRange: HexFiendDataRange) {
+        self.hfController.colorRanges = [highlightedRange.hfHiglightedColorRange, selectedRange.hfSelectedColorRange]
+        if selectedRange.isValidValue {
+            self.hfController.scrollHexView(to: UInt(selectedRange.lowerBound), bytesPerLine: UInt(HexFiendViewController.bytesPerLine))
+        } else if highlightedRange.isValidValue {
+            self.hfController.scrollHexView(to: UInt(highlightedRange.lowerBound), bytesPerLine: UInt(HexFiendViewController.bytesPerLine))
         }
-    }
-    
-    func updateColorDataRange(with range: Range<UInt64>?) {
-        if let range {
-            self.hfController.colorRanges = [HexFiendViewController.colorRange(from: range)]
-        }
-    }
-    
-    private func scrollHexView(basedOn selectedRange: Range<UInt64>) {
-        self.hfController.scrollHexViewBased(on: NSMakeRange(Int(selectedRange.lowerBound), Int(selectedRange.upperBound - selectedRange.lowerBound)), bytesPerLine: UInt(HexFiendViewController.bytesPerLine))
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    static func hfRangeWrapper(from range: Range<UInt64>) -> HFRangeWrapper {
-        let hfRange = HFRangeMake(range.lowerBound, range.upperBound - range.lowerBound)
-        return HFRangeWrapper.withRange(hfRange)
-    }
-    
-    static func colorRange(from range: Range<UInt64>) -> HFColorRange {
-        let colorRange = HFColorRange()
-        colorRange.range = self.hfRangeWrapper(from: range)
-        colorRange.color = NSColor.init(calibratedWhite: 212.0/255.0, alpha: 1)
-        return colorRange
-    }
-    
-    // exposed to Objective-C
     @objc
     func didClickCharacter(at index: UInt64) {
         self.delegate?.didClickHexView(at: index)
@@ -120,10 +136,11 @@ public class HexFiendViewController: NSViewController {
 struct HexFiendViewControllerRepresentable: NSViewControllerRepresentable {
     
     typealias NSViewControllerType = HexFiendViewController
+    typealias ClickHexViewCallback = ((_ dataIndex: UInt64) -> Void)
     
     let data: Data
-    @Binding var machoViewSelection: MachoViewSelection
-    let clickingHexViewCallBack: ((_ charIndex: UInt64) -> Void)
+    @Binding var machoViewState: MachoViewState
+    var clickHexViewCallback: ClickHexViewCallback?
     
     func makeNSViewController(context: Context) -> HexFiendViewController {
         let hexFiendViewController = HexFiendViewController(data: data)
@@ -132,26 +149,32 @@ struct HexFiendViewControllerRepresentable: NSViewControllerRepresentable {
     }
     
     func updateNSViewController(_ hexFiendViewController: HexFiendViewController, context: Context) {
-        hexFiendViewController.updateColorDataRange(with: machoViewSelection.coloredDataRange)
-        hexFiendViewController.updateSelectedDataRange(with: machoViewSelection.selectedDataRange, autoScroll: true)
+        hexFiendViewController.updateDataRange(highlightedRange: machoViewState.coloredDataRange,
+                                               selectedRange: machoViewState.selectedDataRange)
     }
     
     class HexViewCoordinator: NSObject, HexFiendViewControllerDelegate {
-        let clickingHexViewCallBack: ((_ charIndex: UInt64) -> Void)
-        init(clickingHexViewCallBack: @escaping (_: UInt64) -> Void) {
-            self.clickingHexViewCallBack = clickingHexViewCallBack
+        let clickHexViewCallback: ClickHexViewCallback?
+        init(clickHexViewCallback: ClickHexViewCallback?) {
+            self.clickHexViewCallback = clickHexViewCallback
         }
         func didClickHexView(at charIndex: UInt64) {
-            self.clickingHexViewCallBack(charIndex)
+            self.clickHexViewCallback?(charIndex)
         }
     }
     
     func makeCoordinator() -> HexViewCoordinator {
-        return HexViewCoordinator(clickingHexViewCallBack: self.clickingHexViewCallBack)
+        return HexViewCoordinator(clickHexViewCallback: self.clickHexViewCallback)
     }
     
     func sizeThatFits(_ proposal: ProposedViewSize, nsViewController: HexFiendViewController, context: Context) -> CGSize? {
         CGSize(width: nsViewController.layoutRep.minimumViewWidth(forBytesPerLine: UInt(HexFiendViewController.bytesPerLine)), height: proposal.height ?? .infinity)
+    }
+    
+    func onClickHexView(_ callback: @escaping (_ dataIndex: UInt64) -> Void) -> HexFiendViewControllerRepresentable {
+        var vSelf = self
+        vSelf.clickHexViewCallback = callback
+        return vSelf
     }
     
 }

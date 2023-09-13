@@ -193,7 +193,7 @@ class LoadCommand: GroupTranslatedMachoSlice {
         super.init(data, title: title ?? type.name, subTitle: subTitle)
     }
     
-    override func translate() async -> [TranslationGroup] {
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
         let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
         translationGroup.addTranslation(definition: "Load Command Type", humanReadable: type.name, translationType: .numberEnum32Bit)
         translationGroup.addTranslation(definition: "Load Command Size", humanReadable: data.count.hex, translationType: .uint32)

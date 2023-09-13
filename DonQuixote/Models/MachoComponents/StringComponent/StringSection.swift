@@ -18,15 +18,18 @@ class StringSection: GroupTranslatedMachoSlice {
         super.init(data, title: title, subTitle: subTitle)
     }
     
-    override func initialize() async {
-        //TODO:
-    }
-    
-    
-    
-    override func translate() async -> [TranslationGroup] {
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
         let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
         for rawString in await self.stringContainer.rawStrings {
+            
+            if rawString.offset == translationGroup.bytesCount {
+                // the offset of next string should equal the translationGroup's current length
+                // expected. do nothing
+            } else {
+                // otherwise, it indicates there is a hole before the string
+                translationGroup.skip(size: rawString.offset - translationGroup.bytesCount)
+            }
+            
             let stringContent = await self.stringContainer.stringContent(for: rawString)
             translationGroup.addTranslation(definition: nil,
                                             humanReadable: stringContent.content ?? "Invalid \(self.encoding) string. Debug me",

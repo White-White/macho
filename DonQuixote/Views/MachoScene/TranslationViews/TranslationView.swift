@@ -48,18 +48,16 @@ struct AsyncView<Translated: Sendable, Content: View>: View {
 
 struct TranslationView: View {
     
-    @Binding var machoViewSelection: MachoViewSelection
+    @Binding var machoViewState: MachoViewState
     
     var body: some View {
-        if let groupTranslatedSlice = machoViewSelection.selectedMachoSlice as? GroupTranslatedMachoSlice {
+        if let groupTranslatedSlice = machoViewState.selectedMachoSlice as? GroupTranslatedMachoSlice {
             AsyncView(translatedSlice: groupTranslatedSlice) { transtionGroups in
-                GroupTranslationView(translationGroups: transtionGroups,
-                                     coloredDataRange: $machoViewSelection.coloredDataRange,
-                                     selectedDataRange: $machoViewSelection.selectedDataRange)
+                GroupTranslationView(translationGroups: transtionGroups, machoViewState: $machoViewState)
             }
-        } else if let instructionTranslatedSlice = machoViewSelection.selectedMachoSlice as? InstructionSection {
+        } else if let instructionTranslatedSlice = machoViewState.selectedMachoSlice as? InstructionSection {
             AsyncView(translatedSlice: instructionTranslatedSlice) { instructionBank in
-                InstructionTranslationView(instructionBank: instructionBank)
+                InstructionTranslationView(instructionBank: instructionBank, machoViewState: $machoViewState)
             }
         }
     }

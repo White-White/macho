@@ -22,7 +22,7 @@ class RelocationTable: GroupTranslatedMachoSlice {
         super.init(data, title: "Relocation Table", subTitle: nil)
     }
     
-    override func translate() async -> [TranslationGroup] {
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
         var translationGroups: [TranslationGroup] = []
         var dataShifter = DataShifter(self.data)
         for relocationInfo in relocationInfos {

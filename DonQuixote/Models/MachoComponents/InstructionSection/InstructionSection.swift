@@ -11,6 +11,19 @@ import SwiftUI
 // ARMv8 (AArch64) Instruction Encoding
 // http://kitoslab-eng.blogspot.com/2012/10/armv8-aarch64-instruction-encoding.html
 
+struct InstructionTranslation: Identifiable {
+    
+    var id: Range<UInt64> { metaInfo.id }
+    let metaInfo: TranslationMetaInfo
+    let instruction: String
+    
+    init(dataIndexInMacho: Int, instructionSize: UInt16, instruction: String) {
+        self.metaInfo = TranslationMetaInfo(dataIndexInMacho: dataIndexInMacho, type: .code(Int(instructionSize)))
+        self.instruction = instruction
+    }
+    
+}
+
 final class InstructionBank: @unchecked Sendable {
     
     let numberOfInstructions: Int
@@ -21,13 +34,14 @@ final class InstructionBank: @unchecked Sendable {
         self.numberOfInstructions = bank.numberOfInstructions()
     }
     
-    func translation(at index: Int) -> Translation {
-        let capInstruction = bank.instruction(at: index)
-        let translation = Translation(dataRangeInMacho: capInstruction.startAddrInMacho..<(capInstruction.startAddrInMacho + UInt64(capInstruction.size)),
-                    definition: nil,
-                    humanReadable: capInstruction.mnemonic + capInstruction.operand,
-                    translationType: .code(Int(capInstruction.size)))
-        return translation
+    func instructionTranslation(at index: Int) -> InstructionTranslation? {
+        guard let capInstruction = bank.instruction(at: index) else { return nil }
+        
+        let instructionTranslation = InstructionTranslation(dataIndexInMacho: Int(capInstruction.startAddrInMacho),
+                                                            instructionSize: capInstruction.size,
+                                                            instruction: capInstruction.mnemonic + capInstruction.operand)
+        
+        return instructionTranslation
     }
     
     func searchIndexForInstruction(with targetDataIndex: UInt64) -> Int {
@@ -63,9 +77,9 @@ class InstructionSection: MachoTranslatedSlice<InstructionBank> {
         super.init(data, title: title, subTitle: nil)
     }
     
-    override func translate() async -> InstructionBank {
-        let bank = CapStoneHelper.instructions(from: self.data, arch: self.capStoneArchType, codeStartAddress: virtualAddress) { progress in
-            // TODO: update loading progress
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> InstructionBank {
+        let bank = CapStoneHelper.capStoneInstructionBank(from: self.data, arch: self.capStoneArchType, codeStartAddress: virtualAddress) { progress in
+            progressNotifier(progress)
         }
         if let _ = bank.error {
             //TODO: handle error
@@ -77,12 +91,23 @@ class InstructionSection: MachoTranslatedSlice<InstructionBank> {
         return InstructionBank(bank)
     }
     
-    override func searchForTranslation(with targetDataIndex: UInt64) async -> TranslationSearchResult? {
+    override func searchForTranslationMetaInfo(at dataIndexInMacho: UInt64) async -> MachoSlice.SearchResult? {
         guard let instructionBank = await self.untilTranslated(source: "Translation search") else { return nil }
-        let searchedIndex = instructionBank.searchIndexForInstruction(with: targetDataIndex)
-        guard searchedIndex >= 0 else { return nil }
-
-        return TranslationSearchResult(translationGroup: nil, translation: instructionBank.translation(at: searchedIndex))
+        
+        let searchedIndex = instructionBank.searchIndexForInstruction(with: dataIndexInMacho)
+        guard let instruction = instructionBank.instructionTranslation(at: searchedIndex) else { return nil }
+        
+        return SearchResult(enclosedDataRange: self.dataRangeInMacho,
+                            translationMetaInfo: instruction.metaInfo)
+    }
+    
+    override func searchForFirstTranslationMetaInfo() -> MachoSlice.SearchResult? {
+        if case .translated(let instructionBank) = self.loadingStatus,
+           let instructionTranslation = instructionBank.instructionTranslation(at: 0) {
+            return SearchResult(enclosedDataRange: HexFiendDataRange(lowerBound: UInt64(self.offsetInMacho), length: UInt64(self.dataSize)),
+                                translationMetaInfo: instructionTranslation.metaInfo)
+        }
+        return nil
     }
     
 }

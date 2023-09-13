@@ -70,8 +70,8 @@ class DataInCodeSection: GroupTranslatedMachoSlice {
             self.dataInCodeEntries.append(entry)
         }
     }
-
-    override func translate() async -> [TranslationGroup] {
+    
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
         self.dataInCodeEntries.map { $0.translationGroup }
     }
     

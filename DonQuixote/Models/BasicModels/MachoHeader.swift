@@ -52,6 +52,19 @@ class MachoHeader: GroupTranslatedMachoSlice {
     let flags: UInt32
     let reserved: UInt32?
     
+    lazy var translationGroup: TranslationGroup = {
+        let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
+        translationGroup.addTranslation(definition: "Magic", humanReadable: String.init(format: "%0X%0X%0X%0X", magicData[0], magicData[1], magicData[2], magicData[3]), translationType: .rawData(4))
+        translationGroup.addTranslation(definition: "CPU Type", humanReadable: self.cpuType.name, translationType: .numberEnum32Bit)
+        translationGroup.addTranslation(definition: "CPU Sub Type", humanReadable: self.cpuSubtype.name, translationType: .numberEnum32Bit)
+        translationGroup.addTranslation(definition: "Macho Type", humanReadable: self.machoType.readable, translationType: .numberEnum32Bit)
+        translationGroup.addTranslation(definition: "Number of load commands", humanReadable: "\(self.numberOfLoadCommands)", translationType: .uint32)
+        translationGroup.addTranslation(definition: "Size of all load commands", humanReadable: self.sizeOfAllLoadCommand.hex, translationType: .uint32)
+        translationGroup.addTranslation(definition: "Flags", humanReadable: MachoHeader.flagsDescriptionFrom(self.flags), translationType: .flags(4))
+        if let reserved = self.reserved { translationGroup.addTranslation(definition: "Reverved", humanReadable: reserved.hex, translationType: .uint32) }
+        return translationGroup
+    }()
+    
     init(from machoData: Data, is64Bit: Bool) {
         self.is64Bit = is64Bit
         let headerData = machoData.subSequence(from: .zero, count: is64Bit ? 32 : 28)
@@ -67,17 +80,8 @@ class MachoHeader: GroupTranslatedMachoSlice {
         super.init(headerData, title: "Mach Header", subTitle: nil)
     }
     
-    override func translate() async -> [TranslationGroup] {
-        let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
-        translationGroup.addTranslation(definition: "Magic", humanReadable: String.init(format: "%0X%0X%0X%0X", magicData[0], magicData[1], magicData[2], magicData[3]), translationType: .rawData(4))
-        translationGroup.addTranslation(definition: "CPU Type", humanReadable: self.cpuType.name, translationType: .numberEnum32Bit)
-        translationGroup.addTranslation(definition: "CPU Sub Type", humanReadable: self.cpuSubtype.name, translationType: .numberEnum32Bit)
-        translationGroup.addTranslation(definition: "Macho Type", humanReadable: self.machoType.readable, translationType: .numberEnum32Bit)
-        translationGroup.addTranslation(definition: "Number of load commands", humanReadable: "\(self.numberOfLoadCommands)", translationType: .uint32)
-        translationGroup.addTranslation(definition: "Size of all load commands", humanReadable: self.sizeOfAllLoadCommand.hex, translationType: .uint32)
-        translationGroup.addTranslation(definition: "Flags", humanReadable: MachoHeader.flagsDescriptionFrom(self.flags), translationType: .flags(4))
-        if let reserved = self.reserved { translationGroup.addTranslation(definition: "Reverved", humanReadable: reserved.hex, translationType: .uint32) }
-        return [translationGroup]
+    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
+        return [self.translationGroup]
     }
     
     private static func flagsDescriptionFrom(_ flags: UInt32) -> String {

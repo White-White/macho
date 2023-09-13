@@ -11,8 +11,7 @@ import SwiftUI
 struct GroupTranslationView: View {
     
     let translationGroups: [TranslationGroup]
-    @Binding var coloredDataRange: Range<UInt64>?
-    @Binding var selectedDataRange: Range<UInt64>?
+    @Binding var machoViewState: MachoViewState
     
     var body: some View {
         ScrollViewReader { scrollViewProxy in
@@ -22,18 +21,22 @@ struct GroupTranslationView: View {
                         ForEach(translationGroup.translations) { translation in
                             self.singleTranslationView(for: translation)
                                 .onTapGesture {
-                                    self.coloredDataRange = translationGroup.dataRangeInMacho
-                                    self.selectedDataRange = translation.dataRangeInMacho
+                                    machoViewState.update(coloredDataRange: translationGroup.dataRangeInMacho)
+                                    machoViewState.update(selectedDataRange: translation.metaInfo.dataRangeInMacho)
+                                    machoViewState.selectedTranslationMetaInfo = translation.metaInfo
                                 }
                         }
                     }
                 }
             }
+            .onChange(of: machoViewState.selectedTranslationMetaInfo) { newValue in
+                scrollViewProxy.scrollTo(newValue.id)
+            }
         }
     }
     
     private func singleTranslationView(for translation: Translation) -> some View {
-        let isSelected = false
+        let isSelected = machoViewState.selectedTranslationMetaInfo == translation.metaInfo
         return VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(translation.humanReadable)
@@ -55,7 +58,7 @@ struct GroupTranslationView: View {
                         .foregroundColor(Color(nsColor: .secondaryLabelColor))
                 }
                 HStack {
-                    Text("\(translation.translationType.description) (\(translation.translationType.bytesCount) bytes)")
+                    Text("\(translation.metaInfo.type.description) (\(translation.metaInfo.bytesCount) bytes)")
                         .font(.system(size: 10))
                         .foregroundColor(Color(nsColor: .secondaryLabelColor))
                     if let error = translation.error {

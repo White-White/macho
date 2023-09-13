@@ -11,8 +11,8 @@
 
 @implementation HFController (Mocha)
 
-- (void)scrollHexViewBasedOn:(NSRange)selectedRange bytesPerLine:(NSUInteger)bytesPerLine {
-    long double targetLineIndex = (selectedRange.location + selectedRange.length) / bytesPerLine;
+- (void)scrollHexViewToIndex:(NSUInteger)dataIndex bytesPerLine:(NSUInteger)bytesPerLine {
+    long double targetLineIndex = dataIndex / bytesPerLine;
     HFFPRange visableLineRange = [self displayedLineRange];
     if (visableLineRange.location <= targetLineIndex && targetLineIndex <= (visableLineRange.location + visableLineRange.length)) {
         return;

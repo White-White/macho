@@ -66,6 +66,11 @@
 }
 
 - (CapStoneInstruction *)instructionAtIndex:(NSInteger)index {
+    
+    if (_numberOfInstructions <= index) {
+        return nil;
+    }
+    
     CapStoneInstruction *instruction = [[CapStoneInstruction alloc] init];
     
     NSUInteger offsetInStringBank = [self getOffsetInStringBankForInstructionIndex:index];
@@ -145,7 +150,7 @@
 
 @implementation CapStoneHelper
 
-+ (CapStoneInstructionBank *)instructionsFrom:(NSData *)data arch:(CapStoneArchType)arch codeStartAddress:(uint64_t)codeStartAddress progressBlock:(void (^)(float))progressBlock {
++ (CapStoneInstructionBank *)capStoneInstructionBankFrom:(NSData *)data arch:(CapStoneArchType)arch codeStartAddress:(uint64_t)codeStartAddress progressBlock:(void (^)(float))progressBlock {
     
     CapStoneInstructionBank *instructionBank = [[CapStoneInstructionBank alloc] init];
     

@@ -86,26 +86,26 @@ extension UInt64 {
 
 extension Array {
     
-    enum BinarySearchResult {
-        case searchLeft
+    enum BinaryCompareResult {
+        case left
         case matched
-        case searchRight
+        case right
     }
     
-    func binarySearch(matchCheck: (_ element: Element) -> BinarySearchResult) -> Element? {
+    func binarySearch(matchCheck: (_ element: Element) -> BinaryCompareResult) -> Element? {
         return _binarySearch(lower: self.startIndex, upper: self.endIndex - 1, matchCheck: matchCheck)
     }
     
-    private func _binarySearch(lower: Index, upper: Index, matchCheck: (_ element: Element) -> BinarySearchResult) -> Element? {
+    private func _binarySearch(lower: Index, upper: Index, matchCheck: (_ element: Element) -> BinaryCompareResult) -> Element? {
         // false, search left
         // true search right
         guard lower <= upper else { return nil }
         let mid = (lower + upper) / 2
         let element = self[mid]
         switch matchCheck(self[mid]) {
-        case .searchLeft:
+        case .left:
             return _binarySearch(lower: lower, upper: mid - 1, matchCheck: matchCheck)
-        case .searchRight:
+        case .right:
             return _binarySearch(lower: mid + 1, upper: upper, matchCheck: matchCheck)
         case .matched:
             return element

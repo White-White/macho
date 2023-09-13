@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface HFController (Mocha)
 
-- (void)scrollHexViewBasedOn:(NSRange)selectedRange bytesPerLine:(NSUInteger)bytesPerLine;
+- (void)scrollHexViewToIndex:(NSUInteger)dataIndex bytesPerLine:(NSUInteger)bytesPerLine;
 
 - (HexFiendViewController * _Nullable)viewController;
 

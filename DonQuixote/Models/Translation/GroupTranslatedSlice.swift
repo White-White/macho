@@ -9,32 +9,43 @@ import Foundation
 
 class GroupTranslatedMachoSlice: MachoTranslatedSlice<[TranslationGroup]> {
     
-    override func searchForTranslation(with targetDataIndex: UInt64) async -> TranslationSearchResult? {
-        
+    override func searchForTranslationMetaInfo(at dataIndexInMacho: UInt64) async -> MachoSlice.SearchResult? {
         guard let translationGroups = await self.untilTranslated(source: "Translation search") else { return nil }
         
-        let findedGroup = translationGroups.binarySearch { group in
-            if group.dataStartIndex > targetDataIndex {
-                return .searchLeft
-            } else if group.dataRangeInMacho.endIndex <= targetDataIndex {
-                return .searchRight
+        let group = translationGroups.binarySearch { group in
+            if group.dataRangeInMacho.lowerBound > dataIndexInMacho {
+                return .left
+            } else if group.dataRangeInMacho.upperBound <= dataIndexInMacho {
+                return .right
             } else {
                 return .matched
             }
         }
 
-        let findedTranslation = findedGroup?.translations.binarySearch(matchCheck: { translation in
-            if translation.dataRangeInMacho.startIndex > targetDataIndex {
-                return .searchLeft
-            } else if translation.dataRangeInMacho.endIndex <= targetDataIndex {
-                return .searchRight
+        let translation = group?.translations.binarySearch(matchCheck: { translation in
+            if translation.metaInfo.dataRangeInMacho.lowerBound > dataIndexInMacho {
+                return .left
+            } else if translation.metaInfo.dataRangeInMacho.upperBound <= dataIndexInMacho {
+                return .right
             } else {
                 return .matched
             }
         })
-
-        return TranslationSearchResult(translationGroup: findedGroup, translation: findedTranslation)
         
+        if let group, let translation {
+            return SearchResult(enclosedDataRange: group.dataRangeInMacho, translationMetaInfo: translation.metaInfo)
+        }
+
+        return nil
+    }
+    
+    override func searchForFirstTranslationMetaInfo() -> MachoSlice.SearchResult? {
+        if case .translated(let translationGroups) = self.loadingStatus,
+           let firstGroup = translationGroups.first,
+           let firstTranslation = firstGroup.translations.first {
+            return SearchResult(enclosedDataRange: firstGroup.dataRangeInMacho, translationMetaInfo: firstTranslation.metaInfo)
+        }
+        return nil
     }
     
 }
