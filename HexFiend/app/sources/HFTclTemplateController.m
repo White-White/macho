@@ -11,7 +11,7 @@
 #import <tclTomMath.h>
 #import <zlib.h>
 #import <HexFiend/HFEncodingManager.h>
-#import "version.h"
+#import "MinimumVersionRequired.h"
 
 // Tcl_ParseArgsObjv was added in Tcl 8.6, but macOS ships with Tcl 8.5
 #import "Tcl_ParseArgsObjv.h"
@@ -70,20 +70,6 @@ enum command {
     command_uleb128,
     command_sleb128,
 };
-
-long versionInteger(long major, long minor, long patch) {
-    HFASSERT(major > 0);
-    HFASSERT(minor >= 0 && minor <= 999);
-    HFASSERT(patch >= 0 && patch <= 99);
-
-    return major * 100000 + minor * 100 + patch;
-}
-
-#define HF_XSTR(s) HF_STR(s)
-#define HF_STR(s) #s
-static const char* kVersionString = HF_XSTR(HEXFIEND_VERSION);
-#undef HF_STR
-#undef HF_XSTR
 
 @interface HFTclTemplateController ()
 
@@ -234,10 +220,11 @@ DEFINE_COMMAND(sleb128)
 }
 
 - (NSString *)evaluateScript:(NSString *)path {
+    const NSInteger timeoutInSeconds = [NSUserDefaults.standardUserDefaults integerForKey:@"BinaryTemplateScriptTimeout"];
     Tcl_LimitTypeSet(_interp, TCL_LIMIT_TIME);
     Tcl_Time time;
     Tcl_GetTime(&time);
-    time.sec += [[NSUserDefaults standardUserDefaults] integerForKey:@"BinaryTemplateScriptTimeout"];
+    time.sec += timeoutInSeconds;
     Tcl_LimitSetTime(_interp, &time);
     const int err = Tcl_EvalFile(_interp, [path fileSystemRepresentation]);
     if (err != TCL_OK) {
@@ -299,52 +286,6 @@ DEFINE_COMMAND(sleb128)
     }
     return err;
 }
-
-- (BOOL) parseVersionString:(NSString*)s major:(int*)major minor:(int*)minor patch:(int*)patch {
-    if (!s || !major || !minor || !patch) return false;
-
-    *major = *minor = *patch = 0;
-
-    NSArray<NSString *> *components = [s componentsSeparatedByString:@"."];
-    NSUInteger count = components.count;
-
-    if (count == 0 || count > 3) {
-        return NO;
-    }
-
-    if (count > 0) {
-        *major = [components[0] intValue];
-    }
-
-    if (count > 1) {
-        *minor = [components[1] intValue];
-    }
-
-    if (count > 2) {
-        *patch = [components[2] intValue];
-    }
-
-    return YES;
-}
-
-- (long) haveVersion {
-    static long have_version_s = 0;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        int have_major;
-        int have_minor;
-        int have_patch;
-
-        if (![self parseVersionString:[NSString stringWithUTF8String:kVersionString] major:&have_major minor:&have_minor patch:&have_patch]) {
-            return; // need better error handling here?
-        }
-
-        have_version_s = versionInteger(have_major, have_minor, have_patch);
-    });
-
-    return have_version_s;
-}
-
 
 - (int)runCommand:(enum command)command objc:(int)objc objv:(struct Tcl_Obj * CONST *)objv {
     switch (command) {
@@ -532,7 +473,6 @@ DEFINE_COMMAND(sleb128)
                         Tcl_AddErrorInfo(_interp, error.UTF8String);
                         return TCL_ERROR;
                     }
-                    NSLog(@"Include path \"%@\" found in %@", path, folder);
                     found = YES;
                     break;
                 }
@@ -547,20 +487,11 @@ DEFINE_COMMAND(sleb128)
         }
         case command_hf_min_version_required: {
             CHECK_SINGLE_ARG("major[.minor[.patch]]");
-            int major;
-            int minor;
-            int patch;
-            if (![self parseVersionString:[NSString stringWithUTF8String:Tcl_GetString(objv[1])] major:&major minor:&minor patch:&patch]) {
+            NSString *versionString = [NSString stringWithUTF8String:Tcl_GetString(objv[1])];
+            NSString *error = nil;
+            if (![MinimumVersionRequired isMinimumVersionSatisfied:versionString error:&error]) {
                 Tcl_SetErrno(EIO);
-                Tcl_AddErrorInfo(_interp, "Could not parse minimum version information");
-                return TCL_ERROR;
-            }
-            const long need_version = versionInteger(major, minor, patch);
-            if ([self haveVersion] < need_version) {
-                NSString *message = [NSString stringWithFormat:@"This build of Hex Fiend (v%s) does not meet this template's minimum requirement (v%d.%d.%d)",
-                                        kVersionString, major, minor, patch];
-                Tcl_SetErrno(EIO);
-                Tcl_AddErrorInfo(_interp, message.UTF8String);
+                Tcl_AddErrorInfo(_interp, error.UTF8String);
                 return TCL_ERROR;
             }
             break;
@@ -577,6 +508,8 @@ DEFINE_COMMAND(sleb128)
             }
             NSString *hexvalues = [NSString stringWithUTF8String:Tcl_GetStringFromObj(objv[2], NULL)];
             if (![self requireDataAtOffset:offset toMatchHexValues:hexvalues]) {
+                NSString *error = [NSString stringWithFormat:NSLocalizedString(@"Bytes at offset %ld do not match \"%@\"", nil), offset, hexvalues];
+                Tcl_AddErrorInfo(_interp, error.UTF8String);
                 return TCL_ERROR;
             }
             break;
@@ -595,33 +528,54 @@ DEFINE_COMMAND(sleb128)
             [self beginSectionWithLabel:label collapsed:(labelArg > 1)];
             if (objc == labelArg + 2) {
                 const int err = Tcl_EvalObjEx(_interp, objv[labelArg + 1], 0);
+                NSString *error = nil;
                 if (err != TCL_OK) {
+                    HFASSERT([self endSection:&error]);
                     return err;
                 }
-                [self endSection];
+                if (![self endSection:&error]) {
+                    Tcl_SetObjResult(_interp, Tcl_NewStringObj(error.UTF8String, -1));
+                    return TCL_ERROR;
+                }
             }
             break;
         }
         case command_endsection: {
             CHECK_NO_ARG;
-            [self endSection];
+            NSString *error = nil;
+            if (![self endSection:&error]) {
+                Tcl_SetObjResult(_interp, Tcl_NewStringObj(error.UTF8String, -1));
+                return TCL_ERROR;
+            }
             break;
         }
         case command_sectionname: {
             CHECK_SINGLE_ARG("value")
             NSString *name = [NSString stringWithUTF8String:Tcl_GetStringFromObj(objv[1], NULL)];
-            self.currentSection.label = name;
+            NSString *error = nil;
+            if (![self setSectionName:name error:&error]) {
+                Tcl_SetObjResult(_interp, Tcl_NewStringObj(error.UTF8String, -1));
+                return TCL_ERROR;
+            }
             break;
         }
         case command_sectionvalue: {
             CHECK_SINGLE_ARG("value")
             NSString *value = [NSString stringWithUTF8String:Tcl_GetStringFromObj(objv[1], NULL)];
-            self.currentSection.value = value;
+            NSString *error = nil;
+            if (![self setSectionValue:value error:&error]) {
+                Tcl_SetObjResult(_interp, Tcl_NewStringObj(error.UTF8String, -1));
+                return TCL_ERROR;
+            }
             break;
         }
         case command_sectioncollapse: {
             CHECK_NO_ARG;
-            [self.initiallyCollapsed addObject:self.currentSection];
+            NSString *error = nil;
+            if (![self sectionCollapse:&error]) {
+                Tcl_SetObjResult(_interp, Tcl_NewStringObj(error.UTF8String, -1));
+                return TCL_ERROR;
+            }
             break;
         }
         case command_zlib_uncompress: {
@@ -754,26 +708,72 @@ DEFINE_COMMAND(sleb128)
 
 - (int)runTypeCommand:(enum command)command objc:(int)objc objv:(struct Tcl_Obj * CONST *)objv {
     BOOL hexSwitchAllowed = NO;
+    BOOL utcOffsetAllowed = NO;
+    size_t argInfoTableSize = 3;
     switch (command) {
+        case command_uint8:
+        case command_uint16:
         case command_uint32:
+        case command_uint64:
             hexSwitchAllowed = YES;
+            ++argInfoTableSize;
+            break;
+        case command_macdate:
+        case command_unixtime32:
+        case command_unixtime64:
+            utcOffsetAllowed = YES;
+            ++argInfoTableSize;
             break;
         default:
             break;
     }
     int asHexFlag = 0;
+    const char *cmdArg = NULL;
+    const char *utcOffsetArg = NULL;
     NSString *label = nil;
     Tcl_Obj **extraArgs = NULL;
-    Tcl_ArgvInfo argInfoTable[] = {
-        {TCL_ARGV_CONSTANT, "-hex", (void*)1, &asHexFlag, "display as hexadecimal", NULL},
-        TCL_ARGV_AUTO_HELP,
-        TCL_ARGV_TABLE_END,
+    Tcl_ArgvInfo argInfoTable[argInfoTableSize];
+    size_t argInfoTableIndex = 0;
+    if (hexSwitchAllowed) {
+        argInfoTable[argInfoTableIndex++] = (Tcl_ArgvInfo){
+            .type = TCL_ARGV_CONSTANT,
+            .keyStr = "-hex",
+            .srcPtr = (void*)1,
+            .dstPtr = &asHexFlag,
+            .helpStr = "display as hexadecimal",
+            .clientData = NULL,
+        };
+    }
+    if (utcOffsetAllowed) {
+        argInfoTable[argInfoTableIndex++] = (Tcl_ArgvInfo){
+            .type = TCL_ARGV_STRING,
+            .keyStr = "-utcOffset",
+            .srcPtr = NULL,
+            .dstPtr = &utcOffsetArg,
+            .helpStr = "utc offset",
+            .clientData = NULL,
+        };
+    }
+    argInfoTable[argInfoTableIndex++] = (Tcl_ArgvInfo){
+        .type = TCL_ARGV_STRING,
+        .keyStr = "-cmd",
+        .srcPtr = NULL,
+        .dstPtr = &cmdArg,
+        .helpStr = "command/proc to transform value",
+        .clientData = NULL,
     };
+    argInfoTable[argInfoTableIndex++] = (Tcl_ArgvInfo)TCL_ARGV_AUTO_HELP;
+    argInfoTable[argInfoTableIndex++] = (Tcl_ArgvInfo)TCL_ARGV_TABLE_END;
     int err = Tcl_ParseArgsObjv(_interp, argInfoTable, &objc, objv, &extraArgs);
     if (err != TCL_OK) {
         return err;
     }
     const BOOL asHex = asHexFlag == 1;
+    NSNumber *utcOffset = nil;
+    if (utcOffsetArg) {
+        NSString *utcOffsetStr = [NSString stringWithUTF8String:utcOffsetArg];
+        utcOffset = [NSNumber numberWithInteger:utcOffsetStr.integerValue];
+    }
     if (extraArgs && objc > 1) {
         for (int i = 1; i < objc; i++) {
             const char *arg = Tcl_GetStringFromObj(extraArgs[i], NULL);
@@ -784,7 +784,7 @@ DEFINE_COMMAND(sleb128)
             }
         }
         if (objc > 2) {
-            const char *usage = hexSwitchAllowed ? "[-hex] [label]" : "[label";
+            const char *usage = hexSwitchAllowed ? "[-hex] [-cmd] [label]" : "[-cmd] [label";
             Tcl_WrongNumArgs(_interp, 0, objv, usage);
             ckfree((char *)extraArgs);
             return TCL_ERROR;
@@ -896,7 +896,7 @@ DEFINE_COMMAND(sleb128)
         }
         case command_macdate: {
             NSDate *date = nil;
-            if (![self readMacDate:&date forLabel:label]) {
+            if (![self readMacDate:&date utcOffset:utcOffset forLabel:label]) {
                 Tcl_SetObjResult(_interp, Tcl_NewStringObj("Failed to read macdate bytes", -1));
                 return TCL_ERROR;
             }
@@ -927,7 +927,7 @@ DEFINE_COMMAND(sleb128)
         case command_unixtime64: {
             const unsigned numBytes = command == command_unixtime32 ? 4 : 8;
             NSString *dateErr = nil;
-            NSDate *date = [self readUnixTime:numBytes forLabel:label error:&dateErr];
+            NSDate *date = [self readUnixTime:numBytes utcOffset:utcOffset forLabel:label error:&dateErr];
             if (!date) {
                 Tcl_SetObjResult(_interp, Tcl_NewStringObj(dateErr.UTF8String, -1));
                 return TCL_ERROR;
@@ -948,6 +948,21 @@ DEFINE_COMMAND(sleb128)
         default:
             HFASSERT(0);
             break;
+    }
+    if (cmdArg) {
+        // If the -cmd arg is set, use that arg as the name of a procedure that
+        // must take a single arg, which is the node's value, and return a new value.
+        HFTemplateNode *node = self.currentNode.children.lastObject;
+        HFASSERT(node != nil);
+        NSString *script = [NSString stringWithFormat:@"%s %@", cmdArg, node.value];
+        err = Tcl_Eval(_interp, script.UTF8String);
+        if (err != TCL_OK) {
+            return err;
+        }
+        const char *result = Tcl_GetStringResult(_interp);
+        if (result) {
+            node.value = [NSString stringWithUTF8String:result];
+        }
     }
     return TCL_OK;
 }

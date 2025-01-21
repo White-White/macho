@@ -63,6 +63,7 @@ extern NSString * const BaseDataDocumentDidChangeStringEncodingNotification;
     NSUInteger cleanGenerationCount;
 
     BOOL loadingWindow;
+    BOOL hideTextDividerOverride;
 }
 
 - (void)moveSelectionForwards:(NSMenuItem *)sender;
@@ -80,7 +81,6 @@ extern NSString * const BaseDataDocumentDidChangeStringEncodingNotification;
 - (NSWindow *)window;
 
 - (IBAction)showFontPanel:sender;
-- (IBAction)setAntialiasFromMenuItem:sender;
 - (IBAction)setColorBytesFromMenuItem:sender;
 
 - (IBAction)findNext:sender;
@@ -96,6 +96,7 @@ extern NSString * const BaseDataDocumentDidChangeStringEncodingNotification;
 - (IBAction)modifyByteGrouping:sender;
 - (IBAction)customByteGrouping:(id)sender;
 - (IBAction)setLineNumberFormat:(id)sender;
+- (IBAction)setByteThemeFromMenuItem:(NSMenuItem *)sender;
 
 - (IBAction)setBookmark:sender;
 - (IBAction)deleteBookmark:sender;

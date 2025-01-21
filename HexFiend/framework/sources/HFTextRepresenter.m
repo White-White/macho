@@ -287,9 +287,6 @@
     if (bits & (HFControllerEditable)) {
         [(HFRepresenterTextView *)[self view] setEditable:[[self controller] editable]];
     }
-    if (bits & (HFControllerAntialias)) {
-        [(HFRepresenterTextView *)[self view] setShouldAntialias:[[self controller] shouldAntialias]];
-    }
     if (bits & (HFControllerShowCallouts)) {
         [(HFRepresenterTextView *)[self view] setShouldDrawCallouts:[[self controller] shouldShowCallouts]];
     }
@@ -313,6 +310,13 @@
     }
     if (bits & (HFControllerColorRanges)) {
         [(HFRepresenterTextView *)[self view] updateSelectedRanges];
+#if TARGET_OS_IPHONE
+        [[self view] setNeedsDisplay];
+#else
+        [[self view] setNeedsDisplay:YES];
+#endif
+    }
+    if ((bits & HFControllerByteTheme) || (bits & HFControllerInactiveSelectionColorMatchesActive)) {
 #if TARGET_OS_IPHONE
         [[self view] setNeedsDisplay];
 #else
@@ -477,7 +481,7 @@
     REQUIRE_NOT_NULL(pb);
     if ([[self controller] editable]) {
         // we can paste if the pboard contains text or contains an HFByteArray
-        return [HFPasteboardOwner unpackByteArrayFromPasteboard:pb] || [pb availableTypeFromArray:@[NSStringPboardType]];
+        return [HFPasteboardOwner unpackByteArrayFromPasteboard:pb] || [pb availableTypeFromArray:@[NSPasteboardTypeString]];
     }
     return NO;
 }
@@ -503,7 +507,7 @@
         result = YES;
     }
     else {
-        NSString *stringType = [pb availableTypeFromArray:@[NSStringPboardType]];
+        NSString *stringType = [pb availableTypeFromArray:@[NSPasteboardTypeString]];
         if (stringType) {
             NSString *stringValue = [pb stringForType:stringType];
             if (stringValue) {

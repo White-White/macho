@@ -40,7 +40,7 @@
 static const CGFloat kScrollMultiplier = (CGFloat)1.5;
 #endif
 
-static const CFTimeInterval kPulseDuration = .2;
+static const CFTimeInterval kPulseDuration = .5;
 
 static void *KVOContextChangesAreLocked = &KVOContextChangesAreLocked;
 
@@ -86,7 +86,6 @@ static inline Class preferredByteArrayClass(void) {
     bytesPerLine = 16;
     bytesPerColumn = 1;
     _hfflags.editable = YES;
-    _hfflags.antialias = YES;
     _hfflags.showcallouts = YES;
     _hfflags.hideNullBytes = NO;
     _hfflags.selectable = YES;
@@ -114,7 +113,6 @@ static inline Class preferredByteArrayClass(void) {
     [coder encodeInt64:bytesPerColumn forKey:@"HFBytesPerColumn"];
     [coder encodeObject:_font forKey:@"HFFont"];
     [coder encodeDouble:lineHeight forKey:@"HFLineHeight"];
-    [coder encodeBool:_hfflags.antialias forKey:@"HFAntialias"];
     [coder encodeBool:_hfflags.colorbytes forKey:@"HFColorBytes"];
     [coder encodeBool:_hfflags.showcallouts forKey:@"HFShowCallouts"];
     [coder encodeBool:_hfflags.hideNullBytes forKey:@"HFHidesNullBytes"];
@@ -133,7 +131,6 @@ static inline Class preferredByteArrayClass(void) {
     bytesPerColumn = (NSUInteger)[coder decodeInt64ForKey:@"HFBytesPerColumn"];
     _font = [coder decodeObjectForKey:@"HFFont"];
     lineHeight = (CGFloat)[coder decodeDoubleForKey:@"HFLineHeight"];
-    _hfflags.antialias = [coder decodeBoolForKey:@"HFAntialias"];
     _hfflags.colorbytes = [coder decodeBoolForKey:@"HFColorBytes"];
     _hfflags.livereload = [coder decodeBoolForKey:@"HFLiveReload"];
     
@@ -303,18 +300,6 @@ static inline Class preferredByteArrayClass(void) {
     }
 }
 
-- (BOOL)shouldAntialias {
-    return _hfflags.antialias;
-}
-
-- (void)setShouldAntialias:(BOOL)antialias {
-    antialias = !! antialias;
-    if (antialias != _hfflags.antialias) {
-        _hfflags.antialias = antialias;
-        [self _addPropertyChangeBits:HFControllerAntialias];
-    }
-}
-
 - (BOOL)shouldColorBytes {
     return _hfflags.colorbytes;
 }
@@ -358,18 +343,37 @@ static inline Class preferredByteArrayClass(void) {
 
 - (void)setShouldLiveReload:(BOOL)livereload {
     _hfflags.livereload = !!livereload;
-    
 }
 
-- (void)setBytesPerColumn:(NSUInteger)val {
+- (NSUInteger)maxBytesPerColumn
+{
+    return 512;
+}
+
+- (BOOL)setBytesPerColumn:(NSUInteger)val {
+    if (val > self.maxBytesPerColumn) {
+        return NO;
+    }
     if (val != bytesPerColumn) {
         bytesPerColumn = val;
         [self _addPropertyChangeBits:HFControllerBytesPerColumn];
     }
+    return YES;
 }
 
 - (NSUInteger)bytesPerColumn {
     return bytesPerColumn;
+}
+
+- (void)setInactiveSelectionColorMatchesActive:(BOOL)flag {
+    if (flag != _hfflags.inactiveSelectionColorMatchesActive) {
+        _hfflags.inactiveSelectionColorMatchesActive = flag;
+        [self _addPropertyChangeBits:HFControllerInactiveSelectionColorMatchesActive];
+    }
+}
+
+- (BOOL)inactiveSelectionColorMatchesActive {
+    return _hfflags.inactiveSelectionColorMatchesActive;
 }
 
 - (BOOL)_shouldInvertSelectedRangesByAnchorRange {
@@ -551,7 +555,8 @@ static inline Class preferredByteArrayClass(void) {
         HFRange existingRange = [self rangeForBookmark:bookmark];
         NSUndoManager *undoer = [self undoManager];
         [[undoer prepareWithInvocationTarget:self] setRange:existingRange forBookmark:bookmark];
-        [undoer setActionName:NSLocalizedString(@"Bookmark", "")];
+        [undoer setActionName:self.bookmarkUndoActionName];
+        [undoer setActionIsDiscardable:YES];
         
         NSString *attribute = HFBookmarkAttributeFromBookmark(bookmark);
         [attributeArray removeAttribute:attribute];
@@ -560,6 +565,10 @@ static inline Class preferredByteArrayClass(void) {
         }
         [self _addPropertyChangeBits:HFControllerByteRangeAttributes | HFControllerBookmarks];
     }
+}
+
+- (NSString *)bookmarkUndoActionName {
+    return NSLocalizedString(@"Bookmark", "");
 }
 
 - (NSIndexSet *)bookmarksInRange:(HFRange)range {
@@ -2139,5 +2148,17 @@ static BOOL rangesAreInAscendingOrder(NSEnumerator *rangeEnumerator) {
 }
 
 #endif
+
+- (void)setByteTheme:(HFByteTheme * _Nullable)newByteTheme {
+    if (newByteTheme != byteTheme) {
+        byteTheme = newByteTheme;
+        [self _addPropertyChangeBits:HFControllerByteTheme];
+    }
+}
+
+- (HFByteTheme * _Nullable)byteTheme
+{
+    return byteTheme;
+}
 
 @end

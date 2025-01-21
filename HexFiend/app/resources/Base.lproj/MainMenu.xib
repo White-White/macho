@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16097" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="22505" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16097"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22505"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
@@ -146,20 +146,6 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="revertDocumentToSaved:" target="-1" id="364"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem isSeparatorItem="YES" id="74" userLabel="2">
-                                <modifierMask key="keyEquivalentModifierMask" command="YES"/>
-                            </menuItem>
-                            <menuItem title="Page Setup..." keyEquivalent="P" id="77" userLabel="5">
-                                <modifierMask key="keyEquivalentModifierMask" shift="YES" command="YES"/>
-                                <connections>
-                                    <action selector="runPageLayout:" target="-1" id="87"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Print…" keyEquivalent="p" id="78" userLabel="6">
-                                <connections>
-                                    <action selector="print:" target="-1" id="86"/>
                                 </connections>
                             </menuItem>
                         </items>
@@ -379,12 +365,6 @@
                             <menuItem isSeparatorItem="YES" id="415">
                                 <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                             </menuItem>
-                            <menuItem title="Anti-alias" id="457">
-                                <modifierMask key="keyEquivalentModifierMask" control="YES"/>
-                                <connections>
-                                    <action selector="setAntialiasFromMenuItem:" target="-1" id="xJB-SX-oT5"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Color Bytes" id="HpS-tB-2Bk">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
@@ -535,6 +515,20 @@
                                     <action selector="setShowNullBytesFromMenuItem:" target="-1" id="VN0-ev-53i"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Byte Theme" id="bNt-Q7-dE4">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <menu key="submenu" title="Byte Theme" id="N6s-fo-7l2">
+                                    <items>
+                                        <menuItem title="None" id="2OA-s2-OKY">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="setByteThemeFromMenuItem:" target="-1" id="gwX-2Z-whY"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="3PN-s1-H7W"/>
+                                    </items>
+                                </menu>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="743"/>
                             <menuItem title="Enter Full Screen" tag="6" keyEquivalent="f" id="740">
                                 <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
@@ -584,40 +578,7 @@
                     </menu>
                 </menuItem>
                 <menuItem title="Debug" id="470">
-                    <menu key="submenu" title="Debug" id="471">
-                        <items>
-                            <menuItem title="Line Counting VIew" tag="1" id="473">
-                                <connections>
-                                    <action selector="toggleVisibleControllerView:" target="-1" id="481"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Hex View" tag="2" id="476">
-                                <connections>
-                                    <action selector="toggleVisibleControllerView:" target="-1" id="478"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="ASCII View" tag="3" id="475">
-                                <connections>
-                                    <action selector="toggleVisibleControllerView:" target="-1" id="480"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Scroller View" tag="4" id="474">
-                                <connections>
-                                    <action selector="toggleVisibleControllerView:" target="-1" id="477"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Data Inspector" tag="5" id="472">
-                                <connections>
-                                    <action selector="toggleVisibleControllerView:" target="-1" id="479"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Status Bar" tag="6" id="504">
-                                <connections>
-                                    <action selector="toggleVisibleControllerView:" target="-1" id="505"/>
-                                </connections>
-                            </menuItem>
-                        </items>
-                    </menu>
+                    <menu key="submenu" title="Debug" id="471"/>
                 </menuItem>
                 <menuItem title="Window" id="19">
                     <menu key="submenu" title="Window" systemMenu="window" id="24">
@@ -661,7 +622,7 @@
             <connections>
                 <outlet property="bookmarksMenu" destination="569" id="623"/>
                 <outlet property="byteGroupingMenuItem" destination="488" id="U3v-Jk-eKP"/>
-                <outlet property="chooseStringEncoding" destination="680" id="k0D-Q1-3F6"/>
+                <outlet property="byteThemeMenuItem" destination="bNt-Q7-dE4" id="KnB-3u-AF6"/>
                 <outlet property="cliController" destination="Zzl-4N-uHo" id="2fL-Ue-kWP"/>
                 <outlet property="extendForwardsItem" destination="397" id="407"/>
                 <outlet property="fontListPlaceholderMenuItem" destination="411" id="LQp-2v-HO1"/>
@@ -671,7 +632,6 @@
             </connections>
         </customObject>
         <customObject id="733" customClass="OpenDriveWindowController"/>
-        <customObject id="680" customClass="ChooseStringEncodingWindowController"/>
         <customObject id="744" customClass="SUUpdater"/>
         <customObject id="Zzl-4N-uHo" userLabel="CLIController" customClass="CLIController"/>
     </objects>

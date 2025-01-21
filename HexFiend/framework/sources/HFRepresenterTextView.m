@@ -17,6 +17,7 @@
 #import "HFRepresenterTextViewCallout.h"
 #import <objc/message.h>
 #import <CoreText/CoreText.h>
+#import <HexFiend/HFByteTheme.h>
 
 /* Returns the first index where the strings differ.  If the strings do not differ in any characters but are of different lengths, returns the smaller length; if they are the same length and do not differ, returns NSUIntegerMax */
 static inline NSUInteger HFIndexOfFirstByteThatDiffers(const unsigned char *a, NSUInteger len1, const unsigned char *b, NSUInteger len2) {
@@ -138,7 +139,13 @@ static const NSTimeInterval HFCaretBlinkFrequency = 0.56;
     HFASSERT(range.length == 0);
     
     CGPoint caretBaseline = [self originForCharacterAtByteIndex:range.location];
-    return CGRectMake(caretBaseline.x - 1, caretBaseline.y, 1, [self lineHeight]);
+    CGFloat width;
+    if (@available(macOS 14, *)) {
+        width = 2;
+    } else {
+        width = 1;
+    }
+    return CGRectMake(caretBaseline.x - 1, caretBaseline.y, width, [self lineHeight]);
 }
 
 - (void)_blinkCaret:(NSTimer *)timer {
@@ -399,7 +406,6 @@ enum LineCoverage_t {
 - (void)drawPulseBackgroundInRect:(CGRect)pulseRect {
     CGContextRef ctx = HFGraphicsGetCurrentContext();
     CGContextSaveGState(ctx);
-    [[NSBezierPath bezierPathWithRoundedRect:pulseRect xRadius:25 yRadius:25] addClip];
     NSColor *yellow = NSColor.systemYellowColor;
     NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:yellow endingColor:[NSColor colorWithCalibratedRed:(CGFloat)1. green:(CGFloat).75 blue:0 alpha:1]];
     [gradient drawInRect:pulseRect angle:90];
@@ -454,8 +460,8 @@ enum LineCoverage_t {
                 NSRect bounds = [self bounds];
                 NSRect windowFrameInBoundsCoords;
                 if (emptySelection) {
-                    CGFloat w = (CGFloat)fmax([self advancePerColumn], [self advancePerCharacter]);
-                    windowFrameInBoundsCoords.origin.x = startPoint.x - w/2;
+                    CGFloat w = [self advancePerCharacter];
+                    windowFrameInBoundsCoords.origin.x = startPoint.x;
                     windowFrameInBoundsCoords.size.width = w;
                 } else {
                     windowFrameInBoundsCoords.origin.x = bounds.origin.x;
@@ -484,7 +490,6 @@ enum LineCoverage_t {
                 [self drawPulseBackgroundInRect:imageRect];
                 [NSColor.labelColor set];
                 [self.font set];
-                if (! [self shouldAntialias]) CGContextSetShouldAntialias(ctx, NO);
                 CGContextScaleCTM(ctx, imageScale, imageScale);
                 CGContextTranslateCTM(ctx, -windowFrameInBoundsCoords.origin.x, -windowFrameInBoundsCoords.origin.y);
                 [self drawTextWithClip:windowFrameInBoundsCoords restrictingToTextInRanges:ranges context:ctx];
@@ -510,10 +515,17 @@ enum LineCoverage_t {
 #endif
 }
 
+- (NSColor *)caretColor {
+    if (@available(macOS 14, *)) {
+        return NSColor.textInsertionPointColor;
+    }
+    return HFColor.labelColor;
+}
+
 - (void)drawCaretIfNecessaryWithClip:(CGRect)clipRect context:(CGContextRef)ctx {
     CGRect caretRect = CGRectIntersection(caretRectToDraw, clipRect);
     if (! CGRectIsEmpty(caretRect)) {
-        [HFColor.labelColor set];
+        [self.caretColor set];
         CGContextFillRect(ctx, caretRect);
         lastDrawnCaretRect = caretRect;
     }
@@ -555,7 +567,7 @@ enum LineCoverage_t {
 #else
 - (NSColor *)textSelectionColor {
     NSWindow *window = [self window];
-    if (!window.isKeyWindow || self != window.firstResponder) {
+    if (!window.isKeyWindow || (self != window.firstResponder && !representer.controller.inactiveSelectionColorMatchesActive)) {
         return [self inactiveTextSelectionColor];
     } else {
         return [self primaryTextSelectionColor];
@@ -643,12 +655,22 @@ enum LineCoverage_t {
     return result;
 }
 
+- (void)commonInit {
+    self.clipsToBounds = YES;
+}
+
+- (instancetype)initWithFrame:(NSRect)frameRect {
+    self = [super initWithFrame:frameRect];
+    [self commonInit];
+    return self;
+}
+
 - (instancetype)initWithRepresenter:(HFTextRepresenter *)rep {
     self = [super initWithFrame:CGRectMake(0, 0, 1, 1)];
     horizontalContainerInset = 4;
     representer = rep;
     _hftvflags.editable = YES;
-    
+    [self commonInit];
     return self;
 }
 
@@ -668,7 +690,6 @@ enum LineCoverage_t {
     [coder encodeInt64:bytesBetweenVerticalGuides forKey:@"HFBytesBetweenVerticalGuides"];
     [coder encodeInt64:startingLineBackgroundColorIndex forKey:@"HFStartingLineBackgroundColorIndex"];
     [coder encodeObject:rowBackgroundColors forKey:@"HFRowBackgroundColors"];
-    [coder encodeBool:_hftvflags.antialias ? YES : NO forKey:@"HFAntialias"];
     [coder encodeBool:_hftvflags.drawCallouts ? YES : NO forKey:@"HFDrawCallouts"];
     [coder encodeBool:_hftvflags.editable ? YES : NO forKey:@"HFEditable"];
 }
@@ -685,7 +706,6 @@ enum LineCoverage_t {
     bytesBetweenVerticalGuides = (NSUInteger)[coder decodeInt64ForKey:@"HFBytesBetweenVerticalGuides"];
     startingLineBackgroundColorIndex = (NSUInteger)[coder decodeInt64ForKey:@"HFStartingLineBackgroundColorIndex"];
     rowBackgroundColors = [coder decodeObjectForKey:@"HFRowBackgroundColors"];
-    _hftvflags.antialias = [coder decodeBoolForKey:@"HFAntialias"];
     _hftvflags.drawCallouts = [coder decodeBoolForKey:@"HFDrawCallouts"];
     _hftvflags.editable = [coder decodeBoolForKey:@"HFEditable"];
     return self;
@@ -1376,10 +1396,15 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
     }    
 }
 
-- (void)drawGlyphs:(const struct HFGlyph_t *)glyphs atPoint:(CGPoint)point withAdvances:(const CGSize *)advances withStyleRun:(HFTextVisualStyleRun *)styleRun count:(NSUInteger)glyphCount {
+- (void)drawGlyphs:(const struct HFGlyph_t *)glyphs bytes:(NSUInteger)byteCount bytePtr:(const unsigned char *)bytePtr atPoint:(CGPoint)point withAdvances:(const CGSize *)advances withStyleRun:(HFTextVisualStyleRun *)styleRun count:(NSUInteger)glyphCount {
     HFASSERT(glyphs != NULL);
     HFASSERT(advances != NULL);
     HFASSERT(glyphCount > 0);
+
+    const BOOL darkMode = HFDarkModeEnabled();
+    HFByteTheme *byteTheme = self.representer.controller.byteTheme;
+    const struct HFByteThemeColor *colorTable = darkMode ? byteTheme.darkColorTable : byteTheme.lightColorTable;
+
     if ([styleRun shouldDraw]) {
         [styleRun set];
         CGContextRef ctx = HFGraphicsGetCurrentContext();
@@ -1390,10 +1415,14 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
             cgglyphs[j] = glyphs[j].glyph;
         }
         
+        const NSUInteger maximumGlyphCountForByteCount = [self maximumGlyphCountForByteCount:byteCount];
         NSUInteger runStart = 0;
         HFGlyphFontIndex runFontIndex = glyphs[0].fontIndex;
         CGFloat runAdvance = 0;
         for (NSUInteger i=1; i <= glyphCount; i++) {
+            if ((i % maximumGlyphCountForByteCount) == 0) {
+                ++bytePtr;
+            }
             /* Check if this run is finished, or if we are using a substitution font */
             if (i == glyphCount || glyphs[i].fontIndex != runFontIndex || runFontIndex > 0) {
                 /* Draw this run */
@@ -1422,6 +1451,16 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
                     }
                 }
                 
+                if (bytePtr && colorTable) {
+                    const uint8_t byte = *bytePtr;
+                    const struct HFByteThemeColor *col = &colorTable[byte];
+                    if (col->set) {
+                        CGContextSetRGBFillColor(ctx, col->r, col->g, col->b, 1.0);
+                    } else {
+                        [styleRun set];
+                    }
+                }
+
                 /* Draw the glyphs */
                 const CGGlyph *glyphsPtr = cgglyphs + runStart;
                 const CGSize *advancesPtr = advances + runStart;
@@ -1527,6 +1566,8 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
     
     const unsigned char * const bytePtr = [dataObject bytes];
     
+    const NSUInteger maxBytesPerRun = self.representer.controller.byteTheme ? 1 : NSUIntegerMax;
+    
     CGRect lineRectInBoundsSpace = CGRectMake(CGRectGetMinX(bounds), CGRectGetMinY(bounds), CGRectGetWidth(bounds), lineHeight);
     lineRectInBoundsSpace.origin.y -= [self verticalOffset] * lineHeight;
     
@@ -1535,7 +1576,6 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
     // Adjust by descender to center
     CGFloat yAdjust = lineHeight - ceil(fabs(fontObject.descender));
     textTransform.ty += yAdjust - lineHeight * [self verticalOffset];
-    NSUInteger lineIndex = 0;
     const NSUInteger maxGlyphCount = [self maximumGlyphCountForByteCount:bytesPerLine];
     NEW_ARRAY(struct HFGlyph_t, glyphs, maxGlyphCount);
     NEW_ARRAY(CGSize, advances, maxGlyphCount);
@@ -1557,15 +1597,18 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
                 HFTextVisualStyleRun *styleRun = [self styleRunForByteAtIndex:byteIndex];
                 HFASSERT(styleRun != nil);
                 HFASSERT(byteIndex >= [styleRun range].location);
-                const NSUInteger bytesInThisRun = MIN(NSMaxRange([styleRun range]) - byteIndex, bytesInThisLine - byteIndexInLine);
+                const NSUInteger bytesInThisRun = MIN(MIN(NSMaxRange([styleRun range]) - byteIndex, bytesInThisLine - byteIndexInLine), maxBytesPerRun);
                 const NSRange characterRange = [self roundPartialByteRange:NSMakeRange(byteIndex, bytesInThisRun)];
                 if (characterRange.length > 0) {
+                    const unsigned char *bytePtrOffset = NULL;
                     NSUInteger resultGlyphCount = 0;
                     CGFloat initialTextOffset = 0;
                     if (restrictingToRanges == nil) {
+                        bytePtrOffset = bytePtr + characterRange.location;
                         [self extractGlyphsForBytes:bytePtr + characterRange.location count:characterRange.length offsetIntoLine:byteIndexInLine intoArray:glyphs advances:advances resultingGlyphCount:&resultGlyphCount];
                     }
                     else {
+                        bytePtrOffset = bytePtr + byteIndex;
                         [self extractGlyphsForBytes:bytePtr range:NSMakeRange(byteIndex, bytesInThisRun) intoArray:glyphs advances:advances withInclusionRanges:restrictingToRanges initialTextOffset:&initialTextOffset resultingGlyphCount:&resultGlyphCount];
                     }
                     HFASSERT(resultGlyphCount <= maxGlyphCount);
@@ -1580,7 +1623,7 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
                         textTransform.tx += initialTextOffset + advanceIntoLine;
                         CGContextSetTextMatrix(ctx, textTransform);
                         /* Draw them */
-                        [self drawGlyphs:glyphs atPoint:CGPointMake(textTransform.tx, textTransform.ty) withAdvances:advances withStyleRun:styleRun count:resultGlyphCount];
+                        [self drawGlyphs:glyphs bytes:byteCount bytePtr:bytePtrOffset atPoint:CGPointMake(textTransform.tx, textTransform.ty) withAdvances:advances withStyleRun:styleRun count:resultGlyphCount];
                         
                         /* Undo the work we did before so as not to screw up the next run */
                         textTransform.tx -= initialTextOffset + advanceIntoLine;
@@ -1598,7 +1641,6 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
         else if (CGRectGetMinY(lineRectInBoundsSpace) > CGRectGetMaxY(clip)) {
             break;
         }
-        lineIndex++;
     }
     FREE_ARRAY(glyphs);
     FREE_ARRAY(advances);
@@ -1696,8 +1738,6 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
     [[self backgroundColorForEmptySpace] set];
     CGContextFillRect(ctx, clip);
 
-    BOOL antialias = [self shouldAntialias];
-    
 #if !TARGET_OS_IPHONE
     [self.font set];
     if ([self showsFocusRing]) {
@@ -1715,14 +1755,7 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
     [self _drawDefaultLineBackgrounds:clip withLineHeight:[self lineHeight] maxLines:ll2l(HFRoundUpToNextMultipleSaturate(byteCount, bytesPerLine) / bytesPerLine)];
     [self drawRangesIfNecessaryWithClip:clip context:ctx];
     
-    if (! antialias) {
-        CGContextSaveGState(ctx);
-        CGContextSetShouldAntialias(ctx, NO);
-    }
     [self drawTextWithClip:clip restrictingToTextInRanges:nil context:ctx];
-    if (! antialias) {
-        CGContextRestoreGState(ctx);
-    }
     
     // Vertical dividers only make sense in single byte mode.
     if ([self _effectiveBytesPerColumn] == 1) {
@@ -1901,19 +1934,6 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
     }
 }
 
-- (BOOL)shouldAntialias {
-    return _hftvflags.antialias ? YES : NO;
-}
-
-- (void)setShouldAntialias:(BOOL)val {
-    _hftvflags.antialias = !!val;
-#if TARGET_OS_IPHONE
-    [self setNeedsDisplay];
-#else
-    [self setNeedsDisplay:YES];
-#endif
-}
-
 - (BOOL)behavesAsTextField {
     return [[self representer] behavesAsTextField];
 }
@@ -2048,6 +2068,10 @@ static size_t unionAndCleanLists(CGRect *rectList, __unsafe_unretained id *value
 }
 
 - (void)scrollWheel:(NSEvent *)event {
+    if (self.enclosingScrollView) {
+        [super scrollWheel:event];
+        return;
+    }
     [[self representer] scrollWheel:event];
 }
 #endif

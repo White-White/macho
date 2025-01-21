@@ -11,6 +11,10 @@
 #import "HFTclTemplateController.h"
 #import "HFColorRange.h"
 #import "HFDirectoryWatcher.h"
+#import "HFTemplateFile.h"
+#import "TemplateAutodetection.h"
+#import "TemplateMetadata.h"
+#import "MinimumVersionRequired.h"
 
 @interface NSObject (HFTemplateOutlineViewDelegate)
 
@@ -33,17 +37,6 @@
 
 @end
 
-@interface HFTemplateFile : NSObject
-
-@property (copy) NSString *path;
-@property (copy) NSString *name;
-
-@end
-
-@implementation HFTemplateFile
-
-@end
-
 @interface HFBinaryTemplateController () <NSOutlineViewDataSource, NSOutlineViewDelegate>
 
 @property (weak) IBOutlet NSOutlineView *outlineView;
@@ -53,11 +46,13 @@
 @property HFController *controller;
 @property HFTemplateNode *node;
 @property NSArray<HFTemplateFile*> *templates;
+@property NSArray<HFTemplateFile*> *bundleTemplates;
 @property HFTemplateFile *selectedFile;
 @property HFColorRange *colorRange;
 @property NSUInteger anchorPosition;
 @property NSMutableArray *nodesToCollapse;
 @property HFDirectoryWatcher *directoryWatcher;
+@property TemplateAutodetection *autodetection;
 
 @end
 
@@ -65,6 +60,7 @@
 
 - (instancetype)init {
     if ((self = [super initWithNibName:@"BinaryTemplateController" bundle:nil]) != nil) {
+        self.autodetection = [[TemplateAutodetection alloc] init];
     }
     return self;
 }
@@ -90,6 +86,7 @@
     [super viewDidAppear];
 
     [self showPopoverOnce];
+    [self autodetectTemplate];
 }
 
 - (void)showPopoverOnce {
@@ -178,9 +175,20 @@
     NSFileManager *fm = [NSFileManager defaultManager];
     for (NSString *filename in [fm enumeratorAtPath:dir]) {
         if ([filename.pathExtension isEqualToString:@"tcl"]) {
+            NSString *path = [dir stringByAppendingPathComponent:filename];
+            TemplateMetadata *metadata = [[TemplateMetadata alloc] initWithPath:path];
+            if (metadata.isHidden) {
+                continue;
+            }
+            NSString *error = nil;
+            if (metadata.minimumVersionRequired && ![MinimumVersionRequired isMinimumVersionSatisfied:metadata.minimumVersionRequired error:&error]) {
+                NSLog(@"Min version error for %@: %@", path, error);
+                continue;
+            }
             HFTemplateFile *file = [[HFTemplateFile alloc] init];
-            file.path = [dir stringByAppendingPathComponent:filename];
+            file.path = path;
             file.name = [[filename lastPathComponent] stringByDeletingPathExtension];
+            file.supportedTypes = metadata.types;
             [templates addObject:file];
         } else {
             NSString *original = [dir stringByAppendingPathComponent:filename];
@@ -255,6 +263,8 @@
     NSArray *bundleTemplatesPaths = [bundleTemplatesEnumerator.allObjects sortedArrayUsingSelector:@selector(compare:)];
     BOOL addedBundleTemplate = NO;
     NSMutableSet<NSString *> *folders = [NSMutableSet set];
+    NSMutableArray<HFTemplateFile *> *bundleTemplates = [NSMutableArray array];
+    NSFileManager *fileManager = NSFileManager.defaultManager;
     for (NSString *bundleTemplateFilename in bundleTemplatesPaths) {
         if (![bundleTemplateFilename containsString:@"/"] && [bundleTemplateFilename containsString:@"."]) {
             // Skip top-level files
@@ -263,12 +273,19 @@
 
         NSString *bundleTemplatePath = [bundleTemplatesPath stringByAppendingPathComponent:bundleTemplateFilename];
         BOOL isDir = NO;
-        if ([NSFileManager.defaultManager fileExistsAtPath:bundleTemplatePath isDirectory:&isDir] && isDir) {
+        if ([fileManager fileExistsAtPath:bundleTemplatePath isDirectory:&isDir] && isDir) {
             // Skip directories
             continue;
         }
+        
+        TemplateMetadata *metadata = [[TemplateMetadata alloc] initWithPath:bundleTemplatePath];
+        if (metadata.isHidden) {
+            continue;
+        }
 
-        if ([bundleTemplateFilename isEqualToString:@"Utility/General.tcl"]) {
+        NSString *error = nil;
+        if (metadata.minimumVersionRequired && ![MinimumVersionRequired isMinimumVersionSatisfied:metadata.minimumVersionRequired error:&error]) {
+            NSLog(@"Min version error for %@: %@", bundleTemplatePath, error);
             continue;
         }
 
@@ -288,6 +305,8 @@
         HFTemplateFile *file = [[HFTemplateFile alloc] init];
         file.path = bundleTemplatePath;
         file.name = bundleTemplateFilename.lastPathComponent.stringByDeletingPathExtension;
+        file.supportedTypes = metadata.types;
+        [bundleTemplates addObject:file];
         NSMenuItem *templateMenuItem = [[NSMenuItem alloc] initWithTitle:file.name action:@selector(selectTemplateFile:) keyEquivalent:@""];
         templateMenuItem.target = self;
         templateMenuItem.representedObject = file;
@@ -303,6 +322,7 @@
     if (addedBundleTemplate) {
         [self.templatesPopUp.menu addItem:[NSMenuItem separatorItem]];
     }
+    self.bundleTemplates = bundleTemplates;
 }
 
 - (void)noTemplate:(id __unused)sender {
@@ -384,7 +404,7 @@
 - (void)collapseValuedGroups {
     NSOutlineView *outlineView = self.outlineView;
     NSInteger numberOfRows = outlineView.numberOfRows;
-    for (NSInteger i = numberOfRows - 1; i >=0; --i) {
+    for (NSInteger i = numberOfRows - 1; i >= 0; --i) {
         HFTemplateNode *node = [outlineView itemAtRow:i];
         if (node.isGroup && node.value) {
             [outlineView collapseItem:node];
@@ -429,7 +449,16 @@
     NSColor *color = [NSColor lightGrayColor];
     NSData *colorData = [[NSUserDefaults standardUserDefaults] objectForKey:@"BinaryTemplateSelectionColor"];
     if (colorData && [colorData isKindOfClass:[NSData class]]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        // TODO: When 10.14 becomes the minimum target, replace NSUnarchiver/NSArchiver
+        // with NSKeyedUnarchiver/NSKeyedArchiver versions.
+        // This can't be easily done until then because in Preferences.xib NSUnarchiveFromData
+        // is used with the binding. The non-deprecated replacement is NSSecureUnarchiveFromData,
+        // but that requires 10.14.
+        // @available(macOS 10.14, *) ---- this is a token so this code is found later...
         NSColor *tempColor = [NSUnarchiver unarchiveObjectWithData:colorData];
+#pragma clang diagnostic pop
         if (tempColor && [tempColor isKindOfClass:[NSColor class]]) {
             color = tempColor;
         }
@@ -602,6 +631,20 @@
 - (void)viewWillDisappear {
     [self.directoryWatcher stop];
     self.directoryWatcher = nil;
+}
+
+- (void)autodetectTemplate {
+    NSURL *representedURL = self.view.window.representedURL;
+    if (!representedURL) {
+        return;
+    }
+    NSArray<HFTemplateFile *> *allTemplates = [self.templates arrayByAddingObjectsFromArray:self.bundleTemplates];
+    HFTemplateFile *template = [self.autodetection defaultTemplateForFileAtURL:representedURL allTemplates:allTemplates];
+    if (template) {
+        self.selectedFile = template;
+        [self.templatesPopUp selectItemWithTitle:template.name];
+        [self rerunTemplate];
+    }
 }
 
 @end

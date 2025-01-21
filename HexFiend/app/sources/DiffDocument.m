@@ -23,6 +23,7 @@
 - (unsigned long long)concreteToAbstractExpansionBeforeConcreteLocation:(unsigned long long)concreteEndpoint onLeft:(BOOL)left;
 - (unsigned long long)abstractToConcreteCollapseBeforeAbstractLocation:(unsigned long long)abstractEndpoint onLeft:(BOOL)left;
 - (void)scrollToFocusedInstruction;
+- (void)leftLineCountingViewChangedWidth:(NSNotification *)note;
 @end
 
 @implementation DiffDocument
@@ -49,7 +50,7 @@
     // convert documents to bytearrays
     HFByteArray *leftBytes = [document byteArray];
     HFByteArray *rightBytes = [otherDocument byteArray];
-    [self compareByteArray:leftBytes againstByteArray:rightBytes usingRange:range leftFileName:[document displayName] rightFileName:[otherDocument displayName]];
+    [self compareByteArray:leftBytes againstByteArray:rightBytes usingRange:range leftFileName:[[document fileURL] path] rightFileName:[[otherDocument fileURL] path]];
 }
 
 + (void)compareByteArray:(HFByteArray *)leftBytes againstByteArray:(HFByteArray *)rightBytes usingRange:(HFRange)range leftFileName:(NSString *)leftFileName rightFileName:(NSString *)rightFileName {
@@ -61,8 +62,15 @@
     
     // launch diff window
     DiffDocument *doc = [[DiffDocument alloc] initWithLeftByteArray:leftBytes rightByteArray:rightBytes range:range];
-    doc.leftFileName = leftFileName;
-    doc.rightFileName = rightFileName;
+    NSString *leftDisplayName = [[leftFileName lastPathComponent] stringByDeletingPathExtension];
+    NSString *rightDisplayName = [[rightFileName lastPathComponent] stringByDeletingPathExtension];
+    if ([leftDisplayName isEqualToString:rightDisplayName]) {
+        leftDisplayName = [leftFileName stringByAbbreviatingWithTildeInPath];
+        rightDisplayName = [rightFileName stringByAbbreviatingWithTildeInPath];
+    }
+
+    doc.leftFileName = leftDisplayName;
+    doc.rightFileName = rightDisplayName;
     [[NSDocumentController sharedDocumentController] addDocument:doc];
     [doc makeWindowControllers];
     [doc showWindows];
@@ -341,7 +349,6 @@ static enum DiffOverlayViewRangeType_t rangeTypeForValue(CGFloat value) {
         
         /* We haven't receieved a scroll event */
         timeOfLastScrollEvent = -DBL_MAX;
-        
     }
     return self;
 }
@@ -390,8 +397,6 @@ static enum DiffOverlayViewRangeType_t rangeTypeForValue(CGFloat value) {
     switch ([scroller hitPart]) {
         case NSScrollerDecrementPage: [self scrollByLines: -(long long)[self visibleLines]]; break;
         case NSScrollerIncrementPage: [self scrollByLines: (long long)[self visibleLines]]; break;
-        case NSScrollerDecrementLine: [self scrollByLines: -1LL]; break;
-        case NSScrollerIncrementLine: [self scrollByLines: 1LL]; break;
         case NSScrollerKnob: [self scrollByKnobToValue:[scroller doubleValue]]; break;
         default: break;
     }
@@ -669,8 +674,15 @@ static enum DiffOverlayViewRangeType_t rangeTypeForValue(CGFloat value) {
     
     [leftBytes incrementChangeLockCounter];
     [rightBytes incrementChangeLockCounter];
+    NSUserDefaults *userDefaults = NSUserDefaults.standardUserDefaults;
+    BOOL onlyReplace = [userDefaults boolForKey:@"OnlyReplaceInComparison"];
+    BOOL skipOneByteMatches = [userDefaults boolForKey:@"SkipOneByteMatches"];
     [diffComputationView startOperation:^id(HFProgressTracker *tracker) {
-        return [[HFByteArrayEditScript alloc] initWithDifferenceFromSource:self->leftBytes toDestination:self->rightBytes trackingProgress:tracker];
+        return [[HFByteArrayEditScript alloc] initWithDifferenceFromSource:self->leftBytes
+                                                             toDestination:self->rightBytes
+                                                               onlyReplace:onlyReplace
+                                                        skipOneByteMatches:skipOneByteMatches
+                                                          trackingProgress:tracker];
     } completionHandler:^(id script) {
         [self->leftBytes decrementChangeLockCounter];
         [self->rightBytes decrementChangeLockCounter];
@@ -700,7 +712,7 @@ static enum DiffOverlayViewRangeType_t rangeTypeForValue(CGFloat value) {
     /* Fix up our two text views */
     [self fixupTextView:leftTextView];
     [self fixupTextView:rightTextView];
-    
+
     /* Install the two byte arrays */
     [[leftTextView controller] setByteArray:leftBytes];
     [[rightTextView controller] setByteArray:rightBytes];
@@ -1039,7 +1051,7 @@ static const CGFloat kScrollMultiplier = (CGFloat)1.5;
 }
 
 - (void)scrollWithScrollEvent:(NSEvent *)scrollEvent {
-    HFASSERT(scrollEvent != NULL);
+    HFASSERT(scrollEvent != nil);
     HFASSERT([scrollEvent type] == NSEventTypeScrollWheel);
     long double scrollY = 0;
     

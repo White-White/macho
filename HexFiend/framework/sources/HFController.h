@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 */
 
 @class HFRepresenter, HFByteArray, HFFileReference, HFControllerCoalescedUndo, HFByteRangeAttributeArray, HFColorRange;
+@class HFByteTheme;
 
 /*! @enum HFControllerPropertyBits
     The HFControllerPropertyBits bitmask is used to inform the HFRepresenters of a change in the current state that they may need to react to.  A bitmask of the changed properties is passed to representerChangedProperties:.  It is common for multiple properties to be included in such a bitmask.        
@@ -28,7 +29,7 @@ typedef NS_OPTIONS(NSUInteger, HFControllerPropertyBits) {
     HFControllerBytesPerColumn = 1 << 6,	/*!< Indicates that the number of bytes per column (byte grouping) has changed. */
     HFControllerEditable = 1 << 7,		/*!< Indicates that the document has become (or is no longer) editable. */
     HFControllerFont = 1 << 8,			/*!< Indicates that the font property has changed. */
-    HFControllerAntialias = 1 << 9,		/*!< Indicates that the shouldAntialias property has changed. */
+    // 1 << 9 was HFControllerAntialias
     HFControllerLineHeight = 1 << 10,		/*!< Indicates that the lineHeight property has changed. */
     HFControllerViewSizeRatios = 1 << 11,	/*!< Indicates that the optimum size for each view may have changed; used by HFLayoutController after font changes. */
     HFControllerByteRangeAttributes = 1 << 12,  /*!< Indicates that some attributes of the ByteArray has changed within the document.  There is no indication as to what the change is. */
@@ -39,6 +40,8 @@ typedef NS_OPTIONS(NSUInteger, HFControllerPropertyBits) {
     HFControllerHideNullBytes = 1 << 17, /*!< Indicates that the shouldHideNullBytes property has changed. */
     HFControllerColorRanges = 1 << 18, /*!< Indicates that the colorRanges property has changed. */
     HFControllerSavable = 1 << 19, /*!< Indicates that the document has become (or is no longer) savable. */
+    HFControllerByteTheme = 1 << 29, /*!< Indicates that the byteTheme property has changed. */
+    HFControllerInactiveSelectionColorMatchesActive = 1 << 30,
 };
 
 /*! @enum HFControllerMovementDirection
@@ -127,8 +130,9 @@ You create an HFController via <tt>[[HFController alloc] init]</tt>.  After that
     NSData *cachedData;
     NSUInteger cachedGenerationIndex;
     
+    HFByteTheme *byteTheme;
+    
     struct {
-        BOOL antialias;
         BOOL colorbytes;
         BOOL showcallouts;
         BOOL hideNullBytes;
@@ -140,6 +144,7 @@ You create an HFController via <tt>[[HFController alloc] init]</tt>.  After that
         BOOL commandExtendSelection;
         BOOL livereload;
         BOOL savable;
+        BOOL inactiveSelectionColorMatchesActive;
     } _hfflags;
 }
 
@@ -236,11 +241,13 @@ You create an HFController via <tt>[[HFController alloc] init]</tt>.  After that
 - (nullable HFByteArray *)byteArrayForSelectedContentsRanges;
 //@}
 
-@property (nonatomic, strong) NSMutableArray<HFColorRange*> *colorRanges;
+@property (readonly) NSMutableArray<HFColorRange*> *colorRanges;
 - (void)colorRangesDidChange; // manually notify of changes to color range individual values
 
 /* Number of bytes used in each column for a text-style representer. */
-@property (nonatomic) NSUInteger bytesPerColumn;
+@property (readonly) NSUInteger maxBytesPerColumn;
+- (BOOL)setBytesPerColumn:(NSUInteger)val;
+- (NSUInteger)bytesPerColumn;
 
 /*! @name Edit Mode
    Determines what mode we're in, read-only, overwrite or insert. */
@@ -283,9 +290,6 @@ You create an HFController via <tt>[[HFController alloc] init]</tt>.  After that
 
 /*! Whether the user can save the document. */
 @property (nonatomic) BOOL savable;
-
-/*! Whether the text should be antialiased. Note that Mac OS X settings may prevent antialiasing text below a certain point size. */
-@property (nonatomic) BOOL shouldAntialias;
 
 /*! When enabled, characters have a background color that correlates to their byte values. */
 @property (nonatomic) BOOL shouldColorBytes;
@@ -391,6 +395,8 @@ You create an HFController via <tt>[[HFController alloc] init]</tt>.  After that
 /*! Sets the range for the given bookmark.  Pass {ULLONG_MAX, ULLONG_MAX} to remove the bookmark. Undoable. */
 - (void)setRange:(HFRange)range forBookmark:(NSInteger)bookmark;
 
+- (NSString *)bookmarkUndoActionName;
+
 /*! Returns an NSIndexSet of the bookmarks in the given range. */
 - (NSIndexSet *)bookmarksInRange:(HFRange)range;
 
@@ -406,6 +412,11 @@ You create an HFController via <tt>[[HFController alloc] init]</tt>.  After that
 /*! Attempts to break undo stack dependencies for writing the given file.  If it is unable to do so, it will clear the controller's contributions to the stack. Returns YES if it successfully broke the dependencies, and NO if the stack had to be cleared. */
 - (BOOL)clearUndoManagerDependenciesOnRanges:(NSArray *)ranges inFile:(HFFileReference *)reference hint:(NSMutableDictionary *)hint;
 //@}
+
+- (void)setByteTheme:(HFByteTheme * _Nullable)byteTheme;
+- (HFByteTheme * _Nullable)byteTheme;
+
+@property (nonatomic) BOOL inactiveSelectionColorMatchesActive;
 
 @end
 

@@ -8,13 +8,13 @@
 #import "BaseDataDocument.h"
 #import "HFDocumentOperationView.h"
 #import "DataInspectorRepresenter.h"
-#import "TextDividerRepresenter.h"
 #import "HFBinaryTemplateRepresenter.h"
 #import "AppDebugging.h"
 #import "AppUtilities.h"
 #import "AppDelegate.h"
 #import <HexFiend/HexFiend.h>
 #import "HFPrompt.h"
+#import <Hex_Fiend-Swift.h>
 
 static const char *const kProgressContext = "context";
 
@@ -68,6 +68,7 @@ static inline Class preferredByteArrayClass(void) {
     BOOL _resizeBinaryTemplate;
     NSRect _windowFrameBeforeResize;
     CGFloat _binaryTemplateWidthBeforeResize;
+    ScrollViewRepresenter *scrollViewRepresenter;
 }
 
 + (NSString *)userDefKeyForRepresenterWithName:(const char *)repName {
@@ -95,20 +96,23 @@ static inline Class preferredByteArrayClass(void) {
     dispatch_once(&onceToken, ^{
         /* Defaults common to all subclasses */
         NSDictionary *defs = @{
-            @"AntialiasText"   : @YES,
             @"ShowCallouts"    : @YES,
             @"HideNullBytes"   : @NO,
             @"DefaultFontName" : HFDEFAULT_FONT,
             @"DefaultFontSize" : @(HFDEFAULT_FONTSIZE),
             @"BytesPerColumn"  : @4,
             @"DefaultEditMode" : @(HFInsertMode),
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
             @"BinaryTemplateSelectionColor" : [NSArchiver archivedDataWithRootObject:[NSColor lightGrayColor]],
+#pragma clang diagnostic pop
             @"BinaryTemplateRepresenterWidth" : @(self.class.binaryTemplateDefaultWidth),
             @"BinaryTemplateScriptTimeout" : @(10),
             @"BinaryTemplatesSingleClickAction" : @(1), // scroll to offset
             @"BinaryTemplatesDoubleClickAction" : @(0), // do nothing
             @"BinaryTemplatesAutoCollapseValuedSections" : @NO,
             @"ResolveAliases": @YES,
+            @"InactiveSelectionColorMatchesActive": @NO,
         };
         [[NSUserDefaults standardUserDefaults] registerDefaults:defs];
     });
@@ -137,7 +141,6 @@ static inline Class preferredByteArrayClass(void) {
 + (void)initialize {
     if (self == [BaseDataDocument class]) {
         NSDictionary *defs = @{
-            @"AntialiasText" : @YES,
             @"ShowCallouts" : @YES,
             @"HideNullBytes" : @NO,
             @"DefaultFontName" : HFDEFAULT_FONT,
@@ -186,6 +189,7 @@ static inline Class preferredByteArrayClass(void) {
         textDividerRepresenter,
         binaryTemplateRepresenter,
         columnRepresenter,
+        scrollViewRepresenter,
     ];
 }
 
@@ -228,7 +232,7 @@ static inline Class preferredByteArrayClass(void) {
 - (void)showOrHideDividerRepresenter {
     BOOL dividerRepresenterShouldBeShown = [self dividerRepresenterShouldBeShown];
     BOOL dividerRepresenterIsShown = [self representerIsShown:textDividerRepresenter];
-    if (dividerRepresenterShouldBeShown && ! dividerRepresenterIsShown) {
+    if (dividerRepresenterShouldBeShown && ! dividerRepresenterIsShown && !hideTextDividerOverride) {
         [self showViewForRepresenter:textDividerRepresenter];
     } else if (! dividerRepresenterShouldBeShown && dividerRepresenterIsShown) {
         [self hideViewForRepresenter:textDividerRepresenter];
@@ -248,6 +252,7 @@ static inline Class preferredByteArrayClass(void) {
     [shownRepresentersData setObject:statusBarRepresenter forKey:USERDEFS_KEY_FOR_REP(statusBarRepresenter)];
     [shownRepresentersData setObject:scrollRepresenter forKey:USERDEFS_KEY_FOR_REP(scrollRepresenter)];
     [shownRepresentersData setObject:binaryTemplateRepresenter forKey:USERDEFS_KEY_FOR_REP(binaryTemplateRepresenter)];
+    [shownRepresentersData setObject:scrollViewRepresenter forKey:USERDEFS_KEY_FOR_REP(scrollViewRepresenter)];
     NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
     NSEnumerator *keysEnum = [shownRepresentersData keyEnumerator];
     NSString *name = nil;
@@ -381,16 +386,13 @@ static inline Class preferredByteArrayClass(void) {
 - (NSSize)windowWillResize:(NSWindow *)sender toSize:(NSSize)frameSize {
     USE(sender);
     if (layoutRepresenter == nil) return frameSize;
-    if (@available(macOS 10.12, *)) {
-        NSSize size = NSZeroSize;
-        NSArray *windows = self.window.tabbedWindows.count ? self.window.tabbedWindows : @[self.window];
-        for (NSWindow *window in windows) {
-            NSSize windowSize = [window.windowController.document minimumWindowFrameSizeForProposedSize:frameSize];
-            size = NSMakeSize(MAX(size.width, windowSize.width), MAX(size.height, windowSize.height));
-        }
-        return size;
+    NSSize size = NSZeroSize;
+    NSArray *windows = self.window.tabbedWindows.count ? self.window.tabbedWindows : @[self.window];
+    for (NSWindow *window in windows) {
+        NSSize windowSize = [window.windowController.document minimumWindowFrameSizeForProposedSize:frameSize];
+        size = NSMakeSize(MAX(size.width, windowSize.width), MAX(size.height, windowSize.height));
     }
-    return [self minimumWindowFrameSizeForProposedSize:frameSize];
+    return size;
 }
 
 - (void)windowDidResize:(NSNotification * __unused)notification
@@ -562,7 +564,11 @@ static inline Class preferredByteArrayClass(void) {
 /* When our line counting view needs more space, we increase the size of our window, and also move it left by the same amount so that the other content does not appear to move. */
 - (void)lineCountingViewChangedWidth:(NSNotification *)note {
     USE(note);
-    HFASSERT([note object] == lineCountingRepresenter);
+    if (note.object != lineCountingRepresenter) {
+        HFASSERT([note.object isKindOfClass:[HFLineCountingRepresenter class]]);
+        // TODO: Probably DiffDocument's 2nd line counting rep.
+        return;
+    }
     NSView *lineCountingView = [lineCountingRepresenter view];
     
     CGFloat newWidth = [lineCountingRepresenter preferredWidth];
@@ -583,11 +589,7 @@ static inline Class preferredByteArrayClass(void) {
         windowWidthChange = (windowWidthChange < 0 ? HFFloor(windowWidthChange) : HFCeil(windowWidthChange));
         
         /* convertSize: has a nasty habit of stomping on negatives.  Make our window width change negative if our view-space horizontal change was negative. */
-#if CGFLOAT_IS_DOUBLE
-        windowWidthChange = copysign(windowWidthChange, widthChange);
-#else
-        windowWidthChange = copysignf(windowWidthChange, widthChange);
-#endif
+        windowWidthChange = HFCopysign(windowWidthChange, widthChange);
         
         NSRect windowFrame = [lineCountingViewWindow frame];
         windowFrame.size.width += windowWidthChange;
@@ -621,11 +623,7 @@ static inline Class preferredByteArrayClass(void) {
         windowHeightChange = (windowHeightChange < 0 ? HFFloor(windowHeightChange) : HFCeil(windowHeightChange));
         
         /* convertSize: has a nasty habit of stomping on negatives.  Make our window height change negative if our view-space vertical change was negative. */
-#if CGFLOAT_IS_DOUBLE
-        windowHeightChange = copysign(windowHeightChange, heightChange);
-#else
-        windowHeightChange = copysignf(windowHeightChange, heightChange);
-#endif
+        windowHeightChange = HFCopysign(windowHeightChange, heightChange);
         
         NSRect windowFrame = columnViewWindow.frame;
         windowFrame.size.height += windowHeightChange;
@@ -674,9 +672,10 @@ static inline Class preferredByteArrayClass(void) {
     scrollRepresenter = [[HFVerticalScrollerRepresenter alloc] init];
     statusBarRepresenter = [[HFStatusBarRepresenter alloc] init];
     dataInspectorRepresenter = [[DataInspectorRepresenter alloc] init];
-    textDividerRepresenter = [[TextDividerRepresenter alloc] init];
+    textDividerRepresenter = [[HFTextDividerRepresenter alloc] init];
     binaryTemplateRepresenter = [[HFBinaryTemplateRepresenter alloc] init];
     binaryTemplateRepresenter.viewWidth = [NSUserDefaults.standardUserDefaults doubleForKey:@"BinaryTemplateRepresenterWidth"];
+    scrollViewRepresenter = [[ScrollViewRepresenter alloc] init];
 
     /* We will create layoutRepresenter when the window is actually shown
      * so that it will never exist in an inconsistent state */
@@ -693,20 +692,22 @@ static inline Class preferredByteArrayClass(void) {
     [center addObserver:self selector:@selector(dataInspectorChangedRowCount:) name:DataInspectorDidChangeRowCount object:dataInspectorRepresenter];
     [center addObserver:self selector:@selector(dataInspectorDeletedAllRows:) name:DataInspectorDidDeleteAllRows object:dataInspectorRepresenter];
 
-    NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
+    AppDelegate *appDelegate = (AppDelegate *)NSApp.delegate;
+    NSUserDefaults *defs = NSUserDefaults.standardUserDefaults;
     
     lineCountingRepresenter.lineNumberFormat = (HFLineNumberFormat)[defs integerForKey:@"LineNumberFormat"];
 
     [columnRepresenter setLineCountingWidth:lineCountingRepresenter.preferredWidth];
     
     controller = [[HFController alloc] init];
-    [controller setShouldAntialias:[defs boolForKey:@"AntialiasText"]];
     [controller setShouldColorBytes:[defs boolForKey:@"ColorBytes"]];
     [controller setShouldShowCallouts:[defs boolForKey:@"ShowCallouts"]];
     [controller setShouldHideNullBytes:[defs boolForKey:@"HideNullBytes"]];
     [controller setShouldLiveReload:[defs boolForKey:@"LiveReload"]];
     [controller setUndoManager:[self undoManager]];
     [controller setBytesPerColumn:[defs integerForKey:@"BytesPerColumn"]];
+    [controller setByteTheme:appDelegate.byteThemes[[defs stringForKey:@"ByteTheme"]]];
+    controller.inactiveSelectionColorMatchesActive = [defs boolForKey:@"InactiveSelectionColorMatchesActive"];
     
     [self setShouldLiveReload:[controller shouldLiveReload]];
     
@@ -717,7 +718,7 @@ static inline Class preferredByteArrayClass(void) {
         [controller setFont: font];
     }
     
-    [self setStringEncoding:[(AppDelegate *)NSApp.delegate defaultStringEncoding]];
+    [self setStringEncoding:appDelegate.defaultStringEncoding];
     
     static BOOL hasAddedMenu = NO;
     if (! hasAddedMenu) {
@@ -727,11 +728,19 @@ static inline Class preferredByteArrayClass(void) {
             [self installDebuggingMenuItems:menu];
         }
     }
+    
+    [defs addObserver:self
+           forKeyPath:@"InactiveSelectionColorMatchesActive"
+              options:0
+              context:NULL];
+
     return self;
 }
 
 
 - (void)dealloc {
+    [NSUserDefaults.standardUserDefaults removeObserver:self forKeyPath:@"InactiveSelectionColorMatchesActive" context:NULL];
+
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     
     /* Release and stop observing our banner views.  Note that any of these may be nil. */
@@ -747,8 +756,9 @@ static inline Class preferredByteArrayClass(void) {
         if (object != operationView) {
             [self updateDocumentWindowTitle];
         }
-    }
-    else {
+    } else if (object == NSUserDefaults.standardUserDefaults && [keyPath isEqualToString:@"InactiveSelectionColorMatchesActive"]) {
+        controller.inactiveSelectionColorMatchesActive = [NSUserDefaults.standardUserDefaults boolForKey:@"InactiveSelectionColorMatchesActive"];
+    } else {
         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
     }
 }
@@ -794,9 +804,10 @@ static inline Class preferredByteArrayClass(void) {
 }
 
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender {
-    NSArray *files = [sender.draggingPasteboard propertyListForType:NSFilenamesPboardType];
-    for(NSString *filename in files) {
-        NSURL *fileURL = [NSURL fileURLWithPath:filename];
+    NSDictionary *options = @{NSPasteboardURLReadingFileURLsOnlyKey: @YES};
+    NSArray<NSURL *> *urls = [sender.draggingPasteboard readObjectsForClasses:@[NSURL.class]
+                                                                      options:options];
+    for (NSURL *fileURL in urls) {
         [[NSDocumentController sharedDocumentController] openDocumentWithContentsOfURL:fileURL display:YES completionHandler:^(NSDocument * _Nullable __unused document, BOOL __unused documentWasAlreadyOpen, NSError * _Nullable __unused error) {
         }];
     }
@@ -834,28 +845,44 @@ static inline Class preferredByteArrayClass(void) {
     NSArray *representers = self.representers;
     if (arrayIndex >= [representers count]) {
         NSBeep();
+        return;
+    }
+    HFRepresenter *rep = representers[arrayIndex];
+    [self toggleRepresenterVisibleControllerView:rep];
+}
+
+- (void)toggleRepresenterVisibleControllerView:(HFRepresenter *)rep {
+    BOOL isLineCounting = [rep isKindOfClass:[HFLineCountingRepresenter class]];
+    if ([self representerIsShown:rep]) {
+        [self hideViewForRepresenter:rep];
+        [self showOrHideDividerRepresenter];
+        [self relayoutAndResizeWindowForRepresenter:rep];
+        if (isLineCounting) {
+            [columnRepresenter setLineCountingWidth:0];
+        }
     }
     else {
-        HFRepresenter *rep = representers[arrayIndex];
-        BOOL isLineCounting = [rep isKindOfClass:[HFLineCountingRepresenter class]];
-        if ([self representerIsShown:rep]) {
-            [self hideViewForRepresenter:rep];
-            [self showOrHideDividerRepresenter];
-            [self relayoutAndResizeWindowForRepresenter:rep];
-            if (isLineCounting) {
-                [columnRepresenter setLineCountingWidth:0];
-            }
+        [self showViewForRepresenter:rep];
+        [self showOrHideDividerRepresenter];
+        [self relayoutAndResizeWindowForRepresenter:rep];
+        if (isLineCounting) {
+            [columnRepresenter setLineCountingWidth:((NSView *)lineCountingRepresenter.view).frame.size.width];
         }
-        else {
-            [self showViewForRepresenter:rep];
-            [self showOrHideDividerRepresenter];
-            [self relayoutAndResizeWindowForRepresenter:rep];
-            if (isLineCounting) {
-                [columnRepresenter setLineCountingWidth:((NSView *)lineCountingRepresenter.view).frame.size.width];
-            }
-        }
-        [self saveDefaultRepresentersToDisplay];
     }
+    [self saveDefaultRepresentersToDisplay];
+}
+
+- (void)toggleScrollerVisibleControllerView {
+    [self toggleRepresenterVisibleControllerView:scrollRepresenter];
+}
+
+- (void)toggleTextDividerVisibleControllerView {
+    hideTextDividerOverride = [self representerIsShown:textDividerRepresenter];
+    [self toggleRepresenterVisibleControllerView:textDividerRepresenter];
+}
+
+- (void)toggleScrollViewVisibleControllerView {
+    [self toggleRepresenterVisibleControllerView:scrollViewRepresenter];
 }
 
 - (void)setFont:(NSFont *)font registeringUndo:(BOOL)undo {
@@ -923,13 +950,6 @@ static inline Class preferredByteArrayClass(void) {
 }
 
 
-- (IBAction)setAntialiasFromMenuItem:(id)sender {
-    USE(sender);
-    BOOL newVal = ! [controller shouldAntialias];
-    [controller setShouldAntialias:newVal];
-    [[NSUserDefaults standardUserDefaults] setBool:newVal forKey:@"AntialiasText"];
-}
-
 - (IBAction)setShowCalloutsFromMenuItem:(id)sender {
     USE(sender);
     BOOL newVal = ! [controller shouldShowCallouts];
@@ -950,6 +970,16 @@ static inline Class preferredByteArrayClass(void) {
     BOOL newVal = ! [controller shouldColorBytes];
     [controller setShouldColorBytes:newVal];
     [[NSUserDefaults standardUserDefaults] setBool:newVal forKey:@"ColorBytes"];
+}
+
+- (IBAction)setByteThemeFromMenuItem:(NSMenuItem *)sender {
+    HFByteTheme *byteTheme = sender.representedObject;
+    if (byteTheme) {
+        [NSUserDefaults.standardUserDefaults setObject:sender.title forKey:@"ByteTheme"];
+    } else {
+        [NSUserDefaults.standardUserDefaults removeObjectForKey:@"ByteTheme"];
+    }
+    [controller setByteTheme:byteTheme];
 }
 
 
@@ -986,6 +1016,15 @@ static inline Class preferredByteArrayClass(void) {
             return YES;
         }
     }
+    else if (action == @selector(toggleScrollerVisibleControllerView)) {
+        item.state = [self representerIsShown:scrollRepresenter] ? NSControlStateValueOn : NSControlStateValueOff;
+    }
+    else if (action == @selector(toggleTextDividerVisibleControllerView)) {
+        item.state = [self representerIsShown:textDividerRepresenter] ? NSControlStateValueOn : NSControlStateValueOff;
+    }
+    else if (action == @selector(toggleScrollViewVisibleControllerView)) {
+        item.state = [self representerIsShown:scrollViewRepresenter] ? NSControlStateValueOn : NSControlStateValueOff;
+    }
     else if (action == @selector(performFindPanelAction:)) {
         switch ([item tag]) {
             case NSFindPanelActionShowFindPanel:
@@ -1003,10 +1042,6 @@ static inline Class preferredByteArrayClass(void) {
     else if (action == @selector(decreaseFontSize:)) {
         return [[self font] pointSize] >= 5.; //5 is our minimum font size
     }    
-    else if (action == @selector(setAntialiasFromMenuItem:)) {
-        [item setState:[controller shouldAntialias]];
-        return YES;
-    }
     else if (action == @selector(setColorBytesFromMenuItem:)) {
         [item setState:[controller shouldColorBytes]];
         return YES;
@@ -1041,7 +1076,7 @@ static inline Class preferredByteArrayClass(void) {
         return YES;
     }
     else if (action == @selector(setLineNumberFormat:)) {
-        item.state = item.tag == (NSInteger)lineCountingRepresenter.lineNumberFormat ? NSOnState : NSOffState;
+        item.state = item.tag == (NSInteger)lineCountingRepresenter.lineNumberFormat ? NSControlStateValueOn : NSControlStateValueOff;
         return YES;
     }
     else if (action == @selector(scrollToBookmark:) || action == @selector(selectBookmark:)) {
@@ -1064,6 +1099,9 @@ static inline Class preferredByteArrayClass(void) {
         if ([controller editMode] == HFReadOnlyMode)
             return NO;
         // Fall through
+    } else if (action == @selector(setByteThemeFromMenuItem:)) {
+        item.state = item.representedObject == controller.byteTheme;
+        return YES;
     }
 
     return [super validateMenuItem:item];
@@ -1247,10 +1285,6 @@ static inline Class preferredByteArrayClass(void) {
         [NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:NULL subtype:0 data1:0 data2:0] atStart:NO];
     }];
 
-    if (operationError && outError) {
-        *outError = operationError;
-    }
-
     while ([saveView operationIsRunning]) {
         @autoreleasepool {
             @try {  
@@ -1261,6 +1295,10 @@ static inline Class preferredByteArrayClass(void) {
                 NSLog(@"Exception thrown during save: %@", localException);
             }
         }
+    }
+
+    if (operationError && outError) {
+        *outError = operationError;
     }
 
     [showSaveViewAfterDelayTimer invalidate];
@@ -1792,27 +1830,46 @@ cancelled:;
     [self setByteGrouping:newBytesPerColumn];
 }
 
-- (void)setByteGrouping:(NSUInteger)newBytesPerColumn {
-    NSUInteger bytesPerLine = [controller bytesPerLine], newDesiredBytesPerLine;
+- (BOOL)setByteGrouping:(NSUInteger)newBytesPerColumn {
+    const NSUInteger bytesPerLine = [controller bytesPerLine];
+    NSUInteger newDesiredBytesPerLine;
     if (newBytesPerColumn == 0) {
         newDesiredBytesPerLine = bytesPerLine;
     }
     else {
         newDesiredBytesPerLine = MAX(newBytesPerColumn, bytesPerLine - (bytesPerLine % newBytesPerColumn));
     }
-    [controller setBytesPerColumn:newBytesPerColumn];
+    if (![controller setBytesPerColumn:newBytesPerColumn]) {
+        return NO;
+    }
     [self relayoutAndResizeWindowForBytesPerLine:newDesiredBytesPerLine]; //this ensures that the window does not shrink when going e.g. from 4->8->4
     [[NSUserDefaults standardUserDefaults] setInteger:newBytesPerColumn forKey:@"BytesPerColumn"];
+    return YES;
 }
 
 - (IBAction)customByteGrouping:(id __unused)sender {
-    NSString *byteGrouping = HFPromptForValue(NSLocalizedString(@"Enter a custom byte grouping", ""));
-    if (byteGrouping) {
-        NSInteger value = byteGrouping.integerValue;
-        if (value >= 0) {
-            [self setByteGrouping:value];
-            [(AppDelegate *)NSApp.delegate buildByteGroupingMenu];
+    BOOL set = NO;
+    while (!set) {
+        NSString *byteGrouping = HFPromptForValue(NSLocalizedString(@"Enter a custom byte grouping", ""));
+        if (!byteGrouping) {
+            // User cancelled
+            break;
         }
+        NSInteger value = byteGrouping.integerValue;
+        if (value < 0) {
+            NSAlert *alert = [[NSAlert alloc] init];
+            alert.messageText = NSLocalizedString(@"Value cannot be negative.", "");
+            [alert runModal];
+            continue;
+        }
+        if (![self setByteGrouping:value]) {
+            NSAlert *alert = [[NSAlert alloc] init];
+            alert.messageText = [NSString stringWithFormat:NSLocalizedString(@"Value cannot be greater than %lu.", ""), controller.maxBytesPerColumn];
+            [alert runModal];
+            continue;
+        }
+        [(AppDelegate *)NSApp.delegate buildByteGroupingMenu];
+        break;
     }
 }
 
@@ -1919,6 +1976,19 @@ cancelled:;
 
 /* When we're changed we're no longer transient */
 - (void)updateChangeCount:(NSDocumentChangeType)change {
+    // When a bookmark is added, it's registered with the undo manager but it's not
+    // part of the document. However, NSDocument considers all undos as changes.
+    // So we check the current undo's action name to see if it's a bookmark.
+    // If it is a bookmark, and there aren't any current edits,
+    // we drop the updateChangeCount call entirely.
+    // Unfortunately there doesn't seem to be a better way to identify the current undo item
+    // beyond checking the action name.
+    NSUndoManager *undoManager = self.undoManager;
+    const NSDocumentChangeType actualChangeType = change & ~NSChangeDiscardable;
+    if ((actualChangeType == NSChangeDone || actualChangeType == NSChangeUndone || actualChangeType == NSChangeRedone) && !self.window.documentEdited && ([undoManager.undoActionName isEqualToString:controller.bookmarkUndoActionName] || [undoManager.redoActionName isEqualToString:controller.bookmarkUndoActionName])) {
+        return;
+    }
+
     [self setTransient:NO];
     [super updateChangeCount:change];
 }
