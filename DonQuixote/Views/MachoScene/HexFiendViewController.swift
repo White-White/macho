@@ -24,19 +24,19 @@ struct HexFiendDataRange: Equatable {
         lowerBound..<upperBound
     }
     
-    var hfHiglightedColorRange: HFColorRange {
-        let colorRange = HFColorRange()
-        colorRange.range = self.hfRangeWrapper
-        colorRange.color = NSColor.init(calibratedWhite: 212.0/255.0, alpha: 1)
-        return colorRange
-    }
-    
-    var hfSelectedColorRange: HFColorRange {
-        let colorRange = HFColorRange()
-        colorRange.range = self.hfRangeWrapper
-        colorRange.color = NSColor.selectedTextBackgroundColor
-        return colorRange
-    }
+//    var hfHiglightedColorRange: HFColorRange {
+//        let colorRange = HFColorRange()
+//        colorRange.range = self.hfRangeWrapper
+//        colorRange.color = NSColor.init(calibratedWhite: 212.0/255.0, alpha: 1)
+//        return colorRange
+//    }
+//    
+//    var hfSelectedColorRange: HFColorRange {
+//        let colorRange = HFColorRange()
+//        colorRange.range = self.hfRangeWrapper
+//        colorRange.color = NSColor.selectedTextBackgroundColor
+//        return colorRange
+//    }
     
     var hfRangeWrapper: HFRangeWrapper {
         if self.isValidValue {
@@ -74,7 +74,7 @@ public class HexFiendViewController: NSViewController {
         
         self.data = data
         self.hfController = HFController()
-        self.hfController.bytesPerColumn = 1
+        self.hfController.setBytesPerColumn(1)
         self.hfController.editable = false
         self.hfController.font = NSFont.monospacedSystemFont(ofSize: HexFiendViewController.fontSize, weight: .regular)
         
@@ -114,7 +114,7 @@ public class HexFiendViewController: NSViewController {
     }
     
     func updateDataRange(highlightedRange: HexFiendDataRange, selectedRange: HexFiendDataRange) {
-        self.hfController.colorRanges = [highlightedRange.hfHiglightedColorRange, selectedRange.hfSelectedColorRange]
+        self.hfController.selectedContentsRanges = [selectedRange.hfRangeWrapper]
         if selectedRange.isValidValue {
             self.hfController.scrollHexView(to: UInt(selectedRange.lowerBound), bytesPerLine: UInt(HexFiendViewController.bytesPerLine))
         } else if highlightedRange.isValidValue {
