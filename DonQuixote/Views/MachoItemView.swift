@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MachoItemView: View {
     
-    @Environment (\.openWindow) var openWindow
+    @Environment(\.openWindow) var openWindow
     @State private var isHover: Bool = false
     let machoLocation: FileLocation
     

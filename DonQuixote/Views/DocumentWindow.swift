@@ -9,7 +9,7 @@ import SwiftUI
 
 struct DocumentWindow<V: DocumentView>: View {
     
-    @Environment (\.dismiss) var dismiss
+    @Environment(\.dismiss) var dismiss
     let result: Result<V, Error>
     
     var body: some View {

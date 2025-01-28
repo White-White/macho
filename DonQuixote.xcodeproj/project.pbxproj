@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		1F181CE12A4822BD0014B9D6 /* IPA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F181CE02A4822BD0014B9D6 /* IPA.swift */; };
 		1F181CE32A4823380014B9D6 /* IPAView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F181CE22A4823380014B9D6 /* IPAView.swift */; };
+		1F2183572D421E46000D6A0D /* DeepSeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2183562D421E46000D6A0D /* DeepSeek.swift */; };
+		1F2183592D4226FB000D6A0D /* DeepSeekView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2183582D4226FB000D6A0D /* DeepSeekView.swift */; };
 		1F2FBDE72AAB01DA001080E8 /* TranslationGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDE62AAB01DA001080E8 /* TranslationGroup.swift */; };
 		1F2FBDE92AAB1210001080E8 /* MachoHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDE82AAB1210001080E8 /* MachoHeader.swift */; };
 		1F2FBDED2AAB561F001080E8 /* GroupTranslatedSlice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDEC2AAB561F001080E8 /* GroupTranslatedSlice.swift */; };
@@ -94,6 +96,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		1F2183542D421E34000D6A0D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1F8074DE2A331D2900012724 /* HexFiend_2.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A50859A72B204C8100325B36;
+			remoteInfo = "Hex Fiend Tests";
+		};
 		1F8074BC2A331D2000012724 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1F8074A82A331D2000012724 /* Capstone.xcodeproj */;
@@ -288,6 +297,8 @@
 /* Begin PBXFileReference section */
 		1F181CE02A4822BD0014B9D6 /* IPA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPA.swift; sourceTree = "<group>"; };
 		1F181CE22A4823380014B9D6 /* IPAView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPAView.swift; sourceTree = "<group>"; };
+		1F2183562D421E46000D6A0D /* DeepSeek.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeek.swift; sourceTree = "<group>"; };
+		1F2183582D4226FB000D6A0D /* DeepSeekView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeekView.swift; sourceTree = "<group>"; };
 		1F2FBDE62AAB01DA001080E8 /* TranslationGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationGroup.swift; sourceTree = "<group>"; };
 		1F2FBDE82AAB1210001080E8 /* MachoHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoHeader.swift; sourceTree = "<group>"; };
 		1F2FBDEC2AAB561F001080E8 /* GroupTranslatedSlice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupTranslatedSlice.swift; sourceTree = "<group>"; };
@@ -401,6 +412,14 @@
 			path = Faking;
 			sourceTree = "<group>";
 		};
+		1F21833A2D421E34000D6A0D /* DeepSeek */ = {
+			isa = PBXGroup;
+			children = (
+				1F2183562D421E46000D6A0D /* DeepSeek.swift */,
+			);
+			path = DeepSeek;
+			sourceTree = "<group>";
+		};
 		1F2FBDCD2AAAFEA5001080E8 /* BasicModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -450,6 +469,7 @@
 				1FD8A9812A78D4B500F2AECB /* Views */,
 				1F80749A2A33104900012724 /* Files */,
 				1F8076312A331DF400012724 /* Models */,
+				1F21833A2D421E34000D6A0D /* DeepSeek */,
 				1F80748D2A330E8B00012724 /* Assets.xcassets */,
 				1F8074922A330E8B00012724 /* DonQuixote.entitlements */,
 				1F80748F2A330E8B00012724 /* Preview Content */,
@@ -485,6 +505,7 @@
 				1F8076652A331DF400012724 /* MachoView.swift */,
 				1F8076642A331DF400012724 /* ComponentListView.swift */,
 				1F8076672A331DF400012724 /* HexFiendViewController.swift */,
+				1F2183582D4226FB000D6A0D /* DeepSeekView.swift */,
 				1F2FBDEE2AAB5862001080E8 /* TranslationViews */,
 			);
 			path = MachoScene;
@@ -542,6 +563,7 @@
 				1F8074F22A331D2900012724 /* HexFiendling.app */,
 				1F8074F42A331D2900012724 /* HexFiend_Framework Tests.xctest */,
 				1F8074F62A331D2900012724 /* hexf */,
+				1F2183552D421E34000D6A0D /* Hex Fiend Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -781,6 +803,13 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		1F2183552D421E34000D6A0D /* Hex Fiend Tests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = "Hex Fiend Tests.xctest";
+			remoteRef = 1F2183542D421E34000D6A0D /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		1F8074BD2A331D2000012724 /* libcapstone.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -998,6 +1027,7 @@
 				1F8076A22A331EC200012724 /* SymbolTableEntry.swift in Sources */,
 				1F8076C32A358C6400012724 /* UStringSection.swift in Sources */,
 				1F80769F2A331EB100012724 /* MachoSlice.swift in Sources */,
+				1F2183592D4226FB000D6A0D /* DeepSeekView.swift in Sources */,
 				1F80767A2A331E5F00012724 /* ComponentListView.swift in Sources */,
 				1F8076792A331E4F00012724 /* MachoView.swift in Sources */,
 				1FD8A9842A78D4DA00F2AECB /* FatBinaryView.swift in Sources */,
@@ -1047,6 +1077,7 @@
 				1F80767B2A331E6200012724 /* HexFiendViewController.swift in Sources */,
 				1F80768F2A331EA000012724 /* LCLinkerOption.swift in Sources */,
 				1FD8A9862A78D5F600F2AECB /* DocumentView.swift in Sources */,
+				1F2183572D421E46000D6A0D /* DeepSeek.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1197,13 +1228,14 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.white.DonQuixote;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/DonQuixote/Helpers/Bridging-Header.h";
 				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -1228,13 +1260,14 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.white.DonQuixote;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/DonQuixote/Helpers/Bridging-Header.h";
 				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
