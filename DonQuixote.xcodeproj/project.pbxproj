@@ -11,9 +11,11 @@
 		1F181CE32A4823380014B9D6 /* IPAView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F181CE22A4823380014B9D6 /* IPAView.swift */; };
 		1F2183572D421E46000D6A0D /* DeepSeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2183562D421E46000D6A0D /* DeepSeek.swift */; };
 		1F2183592D4226FB000D6A0D /* DeepSeekView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2183582D4226FB000D6A0D /* DeepSeekView.swift */; };
+		1F2183602D4A1555000D6A0D /* Translatable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F21835F2D4A1555000D6A0D /* Translatable.swift */; };
+		1F2183652D4A484A000D6A0D /* SearchableTranslationContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2183642D4A484A000D6A0D /* SearchableTranslationContainer.swift */; };
+		1F2183682D4A75A0000D6A0D /* MachoPortionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2183672D4A75A0000D6A0D /* MachoPortionListView.swift */; };
 		1F2FBDE72AAB01DA001080E8 /* TranslationGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDE62AAB01DA001080E8 /* TranslationGroup.swift */; };
 		1F2FBDE92AAB1210001080E8 /* MachoHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDE82AAB1210001080E8 /* MachoHeader.swift */; };
-		1F2FBDED2AAB561F001080E8 /* GroupTranslatedSlice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDEC2AAB561F001080E8 /* GroupTranslatedSlice.swift */; };
 		1F2FBDF02AAB5D35001080E8 /* InstructionTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDEF2AAB5D35001080E8 /* InstructionTranslationView.swift */; };
 		1F2FBDF22AAB5D44001080E8 /* TranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2FBDF12AAB5D44001080E8 /* TranslationView.swift */; };
 		1F4674632A8399DA00E0AF83 /* FileLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4674622A8399DA00E0AF83 /* FileLocation.swift */; };
@@ -24,7 +26,6 @@
 		1F8074912A330E8B00012724 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1F8074902A330E8B00012724 /* Preview Assets.xcassets */; };
 		1F80749C2A33105900012724 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F80749B2A33105900012724 /* File.swift */; };
 		1F8076792A331E4F00012724 /* MachoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076652A331DF400012724 /* MachoView.swift */; };
-		1F80767A2A331E5F00012724 /* ComponentListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076642A331DF400012724 /* ComponentListView.swift */; };
 		1F80767B2A331E6200012724 /* HexFiendViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076672A331DF400012724 /* HexFiendViewController.swift */; };
 		1F80767E2A331E9900012724 /* Translation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076342A331DF400012724 /* Translation.swift */; };
 		1F8076802A331E9900012724 /* CPUType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076332A331DF400012724 /* CPUType.swift */; };
@@ -58,7 +59,7 @@
 		1F80769C2A331EB100012724 /* CapStoneHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076542A331DF400012724 /* CapStoneHelper.m */; };
 		1F80769D2A331EB100012724 /* UnknownSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076562A331DF400012724 /* UnknownSection.swift */; };
 		1F80769E2A331EB100012724 /* PointerComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076512A331DF400012724 /* PointerComponent.swift */; };
-		1F80769F2A331EB100012724 /* MachoSlice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076572A331DF400012724 /* MachoSlice.swift */; };
+		1F80769F2A331EB100012724 /* MachoPortion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076572A331DF400012724 /* MachoPortion.swift */; };
 		1F8076A12A331EC200012724 /* IndirectSymbolTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F80765F2A331DF400012724 /* IndirectSymbolTable.swift */; };
 		1F8076A22A331EC200012724 /* SymbolTableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076602A331DF400012724 /* SymbolTableEntry.swift */; };
 		1F8076A32A331EC200012724 /* IndirectSymbolTableEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8076592A331DF400012724 /* IndirectSymbolTableEntry.swift */; };
@@ -299,9 +300,11 @@
 		1F181CE22A4823380014B9D6 /* IPAView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPAView.swift; sourceTree = "<group>"; };
 		1F2183562D421E46000D6A0D /* DeepSeek.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeek.swift; sourceTree = "<group>"; };
 		1F2183582D4226FB000D6A0D /* DeepSeekView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeekView.swift; sourceTree = "<group>"; };
+		1F21835F2D4A1555000D6A0D /* Translatable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translatable.swift; sourceTree = "<group>"; };
+		1F2183642D4A484A000D6A0D /* SearchableTranslationContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchableTranslationContainer.swift; sourceTree = "<group>"; };
+		1F2183672D4A75A0000D6A0D /* MachoPortionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoPortionListView.swift; sourceTree = "<group>"; };
 		1F2FBDE62AAB01DA001080E8 /* TranslationGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationGroup.swift; sourceTree = "<group>"; };
 		1F2FBDE82AAB1210001080E8 /* MachoHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoHeader.swift; sourceTree = "<group>"; };
-		1F2FBDEC2AAB561F001080E8 /* GroupTranslatedSlice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupTranslatedSlice.swift; sourceTree = "<group>"; };
 		1F2FBDEF2AAB5D35001080E8 /* InstructionTranslationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionTranslationView.swift; sourceTree = "<group>"; };
 		1F2FBDF12AAB5D44001080E8 /* TranslationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationView.swift; sourceTree = "<group>"; };
 		1F4674622A8399DA00E0AF83 /* FileLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileLocation.swift; sourceTree = "<group>"; };
@@ -351,7 +354,7 @@
 		1F8076542A331DF400012724 /* CapStoneHelper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CapStoneHelper.m; sourceTree = "<group>"; };
 		1F8076552A331DF400012724 /* FunctionStartsComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionStartsComponent.swift; sourceTree = "<group>"; };
 		1F8076562A331DF400012724 /* UnknownSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnknownSection.swift; sourceTree = "<group>"; };
-		1F8076572A331DF400012724 /* MachoSlice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoSlice.swift; sourceTree = "<group>"; };
+		1F8076572A331DF400012724 /* MachoPortion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoPortion.swift; sourceTree = "<group>"; };
 		1F8076592A331DF400012724 /* IndirectSymbolTableEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndirectSymbolTableEntry.swift; sourceTree = "<group>"; };
 		1F80765A2A331DF400012724 /* DataInCodeSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataInCodeSection.swift; sourceTree = "<group>"; };
 		1F80765B2A331DF400012724 /* RelocationEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelocationEntry.swift; sourceTree = "<group>"; };
@@ -361,7 +364,6 @@
 		1F8076602A331DF400012724 /* SymbolTableEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolTableEntry.swift; sourceTree = "<group>"; };
 		1F8076612A331DF400012724 /* StringContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringContainer.swift; sourceTree = "<group>"; };
 		1F8076622A331DF400012724 /* SectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionHeader.swift; sourceTree = "<group>"; };
-		1F8076642A331DF400012724 /* ComponentListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComponentListView.swift; sourceTree = "<group>"; };
 		1F8076652A331DF400012724 /* MachoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachoView.swift; sourceTree = "<group>"; };
 		1F8076672A331DF400012724 /* HexFiendViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HexFiendViewController.swift; sourceTree = "<group>"; };
 		1F80766C2A331DF400012724 /* HexFiendUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HexFiendUtil.h; sourceTree = "<group>"; };
@@ -420,12 +422,28 @@
 			path = DeepSeek;
 			sourceTree = "<group>";
 		};
+		1F2183632D4A4836000D6A0D /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				1F2183642D4A484A000D6A0D /* SearchableTranslationContainer.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		1F2183662D4A7591000D6A0D /* MachoPortionList */ = {
+			isa = PBXGroup;
+			children = (
+				1F2183672D4A75A0000D6A0D /* MachoPortionListView.swift */,
+			);
+			path = MachoPortionList;
+			sourceTree = "<group>";
+		};
 		1F2FBDCD2AAAFEA5001080E8 /* BasicModels */ = {
 			isa = PBXGroup;
 			children = (
 				1F8076352A331DF400012724 /* Macho.swift */,
 				1F2FBDE82AAB1210001080E8 /* MachoHeader.swift */,
-				1F8076572A331DF400012724 /* MachoSlice.swift */,
+				1F8076572A331DF400012724 /* MachoPortion.swift */,
 				1F8076332A331DF400012724 /* CPUType.swift */,
 				1F8076622A331DF400012724 /* SectionHeader.swift */,
 			);
@@ -503,9 +521,9 @@
 			isa = PBXGroup;
 			children = (
 				1F8076652A331DF400012724 /* MachoView.swift */,
-				1F8076642A331DF400012724 /* ComponentListView.swift */,
 				1F8076672A331DF400012724 /* HexFiendViewController.swift */,
 				1F2183582D4226FB000D6A0D /* DeepSeekView.swift */,
+				1F2183662D4A7591000D6A0D /* MachoPortionList */,
 				1F2FBDEE2AAB5862001080E8 /* TranslationViews */,
 			);
 			path = MachoScene;
@@ -572,6 +590,7 @@
 			isa = PBXGroup;
 			children = (
 				1F2FBDCD2AAAFEA5001080E8 /* BasicModels */,
+				1F2183632D4A4836000D6A0D /* Search */,
 				1F9A81FC2AA1F76900F9E16D /* Translation */,
 				1F8076362A331DF400012724 /* LoadCommand */,
 				1F8076462A331DF400012724 /* MachoComponents */,
@@ -694,9 +713,9 @@
 		1F9A81FC2AA1F76900F9E16D /* Translation */ = {
 			isa = PBXGroup;
 			children = (
+				1F21835F2D4A1555000D6A0D /* Translatable.swift */,
 				1F8076342A331DF400012724 /* Translation.swift */,
 				1F2FBDE62AAB01DA001080E8 /* TranslationGroup.swift */,
-				1F2FBDEC2AAB561F001080E8 /* GroupTranslatedSlice.swift */,
 			);
 			path = Translation;
 			sourceTree = "<group>";
@@ -1008,6 +1027,7 @@
 				1F8076CF2A36005700012724 /* HexFiendUtil.m in Sources */,
 				1F8076982A331EB100012724 /* SwiftMetadataComponent.swift in Sources */,
 				1F2FBDE72AAB01DA001080E8 /* TranslationGroup.swift in Sources */,
+				1F2183652D4A484A000D6A0D /* SearchableTranslationContainer.swift in Sources */,
 				1F80768E2A331EA000012724 /* LCBuildVersion.swift in Sources */,
 				1F8076952A331EAC00012724 /* ExportInfoSection.swift in Sources */,
 				1F80768B2A331EA000012724 /* LCDynamicSymbolTable.swift in Sources */,
@@ -1026,11 +1046,11 @@
 				1F8076912A331EA800012724 /* InstructionSection.swift in Sources */,
 				1F8076A22A331EC200012724 /* SymbolTableEntry.swift in Sources */,
 				1F8076C32A358C6400012724 /* UStringSection.swift in Sources */,
-				1F80769F2A331EB100012724 /* MachoSlice.swift in Sources */,
+				1F80769F2A331EB100012724 /* MachoPortion.swift in Sources */,
 				1F2183592D4226FB000D6A0D /* DeepSeekView.swift in Sources */,
-				1F80767A2A331E5F00012724 /* ComponentListView.swift in Sources */,
 				1F8076792A331E4F00012724 /* MachoView.swift in Sources */,
 				1FD8A9842A78D4DA00F2AECB /* FatBinaryView.swift in Sources */,
+				1F2183602D4A1555000D6A0D /* Translatable.swift in Sources */,
 				1F8076A72A331EC200012724 /* RelocationTable.swift in Sources */,
 				1F8076922A331EAC00012724 /* RebaseOperationCodeMetadata.swift in Sources */,
 				1F8076A62A331EC200012724 /* RelocationEntry.swift in Sources */,
@@ -1049,7 +1069,6 @@
 				1F80749C2A33105900012724 /* File.swift in Sources */,
 				1F8076B22A331F2100012724 /* Demangle.swift in Sources */,
 				1F8076942A331EAC00012724 /* OperationCodeSection.swift in Sources */,
-				1F2FBDED2AAB561F001080E8 /* GroupTranslatedSlice.swift in Sources */,
 				1F8076AF2A331F1F00012724 /* TickTock.swift in Sources */,
 				1F181CE12A4822BD0014B9D6 /* IPA.swift in Sources */,
 				1F4674652A83B43200E0AF83 /* FileType.swift in Sources */,
@@ -1061,6 +1080,7 @@
 				1F80769D2A331EB100012724 /* UnknownSection.swift in Sources */,
 				1F8076822A331EA000012724 /* LCSegment.swift in Sources */,
 				1FAEE8D82A84C1E700472AE0 /* MachoContainerView.swift in Sources */,
+				1F2183682D4A75A0000D6A0D /* MachoPortionListView.swift in Sources */,
 				1F80769A2A331EB100012724 /* TextConstSection.swift in Sources */,
 				1FD8A9A22A790A6400F2AECB /* FileHandle.swift in Sources */,
 				1F80769C2A331EB100012724 /* CapStoneHelper.m in Sources */,

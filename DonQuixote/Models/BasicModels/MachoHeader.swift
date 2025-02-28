@@ -40,7 +40,7 @@ enum MachoType {
     }
 }
 
-class MachoHeader: GroupTranslatedMachoSlice {
+class MachoHeader: MachoPortion, @unchecked Sendable {
     
     let magicData: Data
     let is64Bit: Bool
@@ -80,8 +80,12 @@ class MachoHeader: GroupTranslatedMachoSlice {
         super.init(headerData, title: "Mach Header", subTitle: nil)
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
-        return [self.translationGroup]
+    override func initialize() async -> AsyncInitializeResult {
+        return Void()
+    }
+    
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
+        return TranslationGroups([translationGroup])
     }
     
     private static func flagsDescriptionFrom(_ flags: UInt32) -> String {

@@ -7,16 +7,15 @@
 
 import Foundation
 
-class OperationCodeSection<Code: OperationCodeMetadataProtocol>: GroupTranslatedMachoSlice {
+class OperationCodeSection<Code: OperationCodeMetadataProtocol>: MachoPortion, @unchecked Sendable {
     
-    private(set) var operationCodes: [OperationCode<Code>] = []
-    
-    override func initialize() async {
-        self.operationCodes = OperationCodeSection.operationCodes(from: self.data)
+    override func initialize() async -> AsyncInitializeResult {
+        return OperationCodeSection.operationCodes(from: self.data)
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
-        self.operationCodes.map { $0.translationGroup }
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
+        let initializeResult = initializeResult as! [OperationCode<Code>]
+        return TranslationGroups(initializeResult.map { $0.translationGroup })
     }
     
     // parsing

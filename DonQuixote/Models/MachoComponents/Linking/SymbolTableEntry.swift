@@ -229,13 +229,13 @@ struct SymbolTableEntry {
         switch self.symbolType {
         case .stab(_):
             //TODO: make sure for stab symbol, it's normal to fail to find symbol name
-            if let foundName = await self.stringTable.findString(atDataOffset: Int(self.indexInStringTable)) {
+            if let foundName = try? await self.stringTable.findString(atDataOffset: Int(self.indexInStringTable)) {
                 self.symbolName = foundName
             } else {
                 self.symbolName = "Not found"
             }
         default:
-            self.symbolName = await self.stringTable.findString(atDataOffset: Int(self.indexInStringTable)) ?? "Not Found"
+            self.symbolName = (try? await self.stringTable.findString(atDataOffset: Int(self.indexInStringTable))) ?? "Not Found"
         }
     }
     
@@ -269,7 +269,7 @@ struct SymbolTableEntry {
                 nValueDesp = "String table offset"
                 nValueExplanation = nValue.hex
                 nValueExtraDesp = "Referred string"
-                nValueExtraExplanation = await self.stringTable.findString(atDataOffset: Int(nValue))
+                nValueExtraExplanation = try? await self.stringTable.findString(atDataOffset: Int(nValue))
             default:
                 break
             }

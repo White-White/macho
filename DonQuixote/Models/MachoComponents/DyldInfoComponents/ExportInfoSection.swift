@@ -70,7 +70,7 @@ struct ExportInfoNodeEdge {
     let offset: LEB128
 }
 
-class ExportInfoNode {
+struct ExportInfoNode {
     let startOffsetInMacho: Int
     let accumulatedString: String
     
@@ -101,7 +101,7 @@ class ExportInfoNode {
         self.edges = edges
     }
     
-    var translationGrouup: TranslationGroup {
+    var translationGroup: TranslationGroup {
         let translationGroup = TranslationGroup(dataStartIndex: self.startOffsetInMacho)
         
         translationGroup.addTranslation(definition: "Terminal Size", humanReadable: "\(terminalSize.rawValue)",
@@ -137,9 +137,8 @@ class ExportInfoNode {
     
 }
 
-class ExportInfoSection: GroupTranslatedMachoSlice {
+class ExportInfoSection: MachoPortion, @unchecked Sendable {
     
-    private(set) var exportInfoNodes: [ExportInfoNode] = []
     let is64Bit: Bool
     
     init(_ data: Data, title: String, is64Bit: Bool) {
@@ -147,13 +146,14 @@ class ExportInfoSection: GroupTranslatedMachoSlice {
         super.init(data, title: title, subTitle: nil)
     }
     
-    override func initialize() async {
+    override func initialize() async -> AsyncInitializeResult {
         let root = ExportInfoSection.generateNode(from: data, for: nil, parentNode: nil)
-        self.exportInfoNodes = ExportInfoSection.allNodes(from: root, in: data).sorted { $0.startOffsetInMacho < $1.startOffsetInMacho }
+        return ExportInfoSection.allNodes(from: root, in: data).sorted { $0.startOffsetInMacho < $1.startOffsetInMacho }
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
-        return self.exportInfoNodes.map { $0.translationGrouup }
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
+        let initializeResult = initializeResult as! [ExportInfoNode]
+        return TranslationGroups(initializeResult.map { $0.translationGroup })
     }
     
     private static func allNodes(from root: ExportInfoNode, in data: Data) -> [ExportInfoNode] {

@@ -7,14 +7,18 @@
 
 import Foundation
 
-class UnknownSection: GroupTranslatedMachoSlice {
+class UnknownSection: MachoPortion, @unchecked Sendable {
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
+    override func initialize() async -> AsyncInitializeResult {
+        return Void()
+    }
+    
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
         let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
         translationGroup.addTranslation(definition: "Unknow",
                                         humanReadable: "Mocha doesn's know how to parse this section yet.",
                                         translationType: .rawData(0))
-        return [translationGroup]
+        return TranslationGroups([translationGroup])
     }
     
 }

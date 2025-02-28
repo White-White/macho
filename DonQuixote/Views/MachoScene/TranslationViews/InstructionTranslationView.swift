@@ -11,7 +11,8 @@ import SwiftUI
 struct InstructionTranslationView: View {
     
     let instructionBank: InstructionBank
-    @Binding var machoViewState: MachoViewState
+    
+    @EnvironmentObject var machoViewState: MachoViewState
     
     var body: some View {
         ScrollViewReader { scrollViewProxy in
@@ -34,8 +35,8 @@ struct InstructionTranslationView: View {
     func singleInstructionTranslationView(for index: Int, inBank bank: InstructionBank) -> some View {
         let instructionTranslation = bank.instructionTranslation(at: index)!
         return self.singleInstructionTranslationView(for: instructionTranslation).onTapGesture {
-            self.machoViewState.update(selectedDataRange: instructionTranslation.metaInfo.dataRangeInMacho)
-            self.machoViewState.selectedTranslationMetaInfo = instructionTranslation.metaInfo
+//            self.machoViewState.update(selectedDataRange: instructionTranslation.metaInfo.dataRangeInMacho)
+            machoViewState.selectedTranslationMetaInfo = instructionTranslation.metaInfo
         }
     }
     

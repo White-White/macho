@@ -7,7 +7,7 @@
 
 import Foundation
 
-class TextConstSection: UnknownSection {
+class TextConstSection: UnknownSection, @unchecked Sendable {
     
     //TODO: fix text const component
     

@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LCDyldInfo: LoadCommand {
+class LCDyldInfo: LoadCommand, @unchecked Sendable {
     
     let rebaseOffset: UInt32
     let rebaseSize: UInt32
@@ -52,9 +52,9 @@ class LCDyldInfo: LoadCommand {
         translationGroup.addTranslation(definition: "Export Info Size", humanReadable: exportSize.hex, translationType: .uint32)
     }
     
-    func dyldInfoSections(machoData: Data, machoHeader: MachoHeader) -> [MachoSlice] {
+    func dyldInfoSections(machoData: Data, machoHeader: MachoHeader) -> [MachoPortion] {
         let is64Bit = machoHeader.is64Bit
-        var components: [MachoSlice] = []
+        var components: [MachoPortion] = []
         let rebaseInfoStart = Int(self.rebaseOffset)
         let rebaseInfoSize = Int(self.rebaseSize)
         if rebaseInfoStart.isNotZero && rebaseInfoSize.isNotZero {

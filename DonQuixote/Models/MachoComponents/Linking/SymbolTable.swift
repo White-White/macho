@@ -7,14 +7,16 @@
 
 import Foundation
 
-class SymbolTable: GroupTranslatedMachoSlice {
+struct SymbolTableEntryContainer {
+    let symbolTableEntries: [SymbolTableEntry]
+    let symbolTableEntryMap: [UInt64: [Int]]
+}
+
+class SymbolTable: MachoPortion, @unchecked Sendable {
     
     let is64Bit: Bool
     let stringTable: StringTable
     let machoSectionHeaders: [SectionHeader]
-    
-    private var symbolTableEntries: [SymbolTableEntry] = []
-    private var symbolTableEntryMap: [UInt64: [Int]] = [:]
     
     init(symbolTableOffset: Int,
          numberOfSymbolTableEntries: Int,
@@ -29,55 +31,67 @@ class SymbolTable: GroupTranslatedMachoSlice {
         self.stringTable = stringTable
         self.machoSectionHeaders = machoSectionHeaders
         super.init(symbolTableData, title: "Symbol Table", subTitle: nil)
-        
     }
     
-    override func initialize() async {
+    override func initialize() async -> AsyncInitializeResult {
+
+        var symbolTableEntries: [SymbolTableEntry] = []
+        var symbolTableEntryMap: [UInt64: [Int]] = [:]
+        
         let modelSize = self.is64Bit ? SymbolTableEntry.modelSizeFor64Bit : SymbolTableEntry.modelSizeFor32Bit
         let numberOfModels = self.dataSize/modelSize
         for index in 0..<numberOfModels {
             let data = self.data.subSequence(from: index * modelSize, count: modelSize)
             let entry = await SymbolTableEntry(with: data, is64Bit: self.is64Bit, stringTable: self.stringTable, machoSectionHeaders: self.machoSectionHeaders)
-            self.symbolTableEntries.append(entry)
+            symbolTableEntries.append(entry)
         }
         
         // quick index
-        for (index, symbolEntry) in self.symbolTableEntries.enumerated() {
+        for (index, symbolEntry) in symbolTableEntries.enumerated() {
             
             /* comments from LinkEdit.m in MachoOView code base
             // it is possible to associate more than one symbol to the same address.
             // every new symbol will be appended to the list
             */
             
-            if let existedIndexs = self.symbolTableEntryMap[symbolEntry.nValue] {
-                self.symbolTableEntryMap[symbolEntry.nValue] = existedIndexs + [index]
+            if let existedIndexs = symbolTableEntryMap[symbolEntry.nValue] {
+                symbolTableEntryMap[symbolEntry.nValue] = existedIndexs + [index]
             } else {
-                self.symbolTableEntryMap[symbolEntry.nValue] = [index]
+                symbolTableEntryMap[symbolEntry.nValue] = [index]
             }
         }
+        
+        return SymbolTableEntryContainer(symbolTableEntries: symbolTableEntries, symbolTableEntryMap: symbolTableEntryMap)
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
+        let initializeResult = initializeResult as! SymbolTableEntryContainer
         var translationGroups: [TranslationGroup] = []
-        for entry in self.symbolTableEntries {
+        for entry in initializeResult.symbolTableEntries {
             translationGroups.append(await entry.translationGroup)
         }
-        return translationGroups
+        return TranslationGroups(translationGroups)
     }
     
-    func findSymbol(byVirtualAddress virtualAddress: UInt64, callerTag: String) async -> [SymbolTableEntry]? {
-        await self.untilInitialized(source: callerTag)
+    func findSymbol(byVirtualAddress virtualAddress: UInt64, callerTag: String) async throws -> [SymbolTableEntry]? {
+        let symbolTableEntryContainer = try await self.symbolTableEntryContainer(callerTag: callerTag)
+        
         var symbolTableEntrys: [SymbolTableEntry] = []
-        if let symbolTableEntryIndexs = symbolTableEntryMap[virtualAddress] {
-            symbolTableEntrys = symbolTableEntryIndexs.map { self.symbolTableEntries[$0] }
+        if let symbolTableEntryIndexs = symbolTableEntryContainer.symbolTableEntryMap[virtualAddress] {
+            symbolTableEntrys = symbolTableEntryIndexs.map { symbolTableEntryContainer.symbolTableEntries[$0] }
         }
         return symbolTableEntrys
     }
     
-    func findSymbol(atIndex index: Int, callerTag: String) async -> SymbolTableEntry {
-        await self.untilInitialized(source: callerTag)
-        guard index < self.symbolTableEntries.count else { fatalError() }
-        return self.symbolTableEntries[index]
+    func findSymbol(atIndex index: Int, callerTag: String) async throws -> SymbolTableEntry {
+        let symbolTableEntryContainer = try await self.symbolTableEntryContainer(callerTag: callerTag)
+        
+        guard index < symbolTableEntryContainer.symbolTableEntries.count else { fatalError() }
+        return symbolTableEntryContainer.symbolTableEntries[index]
+    }
+    
+    func symbolTableEntryContainer(callerTag: String) async throws -> SymbolTableEntryContainer {
+        (try await self.storage.initializeResult(calleeTag: callerTag)) as! SymbolTableEntryContainer
     }
     
 }

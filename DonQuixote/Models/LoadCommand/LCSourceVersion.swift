@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LCSourceVersion: LoadCommand {
+class LCSourceVersion: LoadCommand, @unchecked Sendable {
     
     let version: String
     

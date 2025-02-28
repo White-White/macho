@@ -8,58 +8,42 @@
 import Foundation
 import SwiftUI
 
-struct AsyncView<Translated: Sendable, Content: View>: View {
+struct TranslationView: View {
     
-    @ObservedObject var translatedSlice: MachoTranslatedSlice<Translated>
-    let contentBuilder: (_ item: Translated) -> Content
+    @EnvironmentObject var machoViewState: MachoViewState
     
-    init(translatedSlice: MachoTranslatedSlice<Translated>, @ViewBuilder contentBuilder: @escaping (_ item: Translated) -> Content) {
-        self.translatedSlice = translatedSlice
-        self.contentBuilder = contentBuilder
-    }
+    @ObservedObject var machoPortionStorage: MachoPortionStorage
     
     var body: some View {
         VStack {
-            switch translatedSlice.loadingStatus {
+            switch machoViewState.selectedMachoPortion.storage.loadingStatus {
             case .created:
-                Text("\(translatedSlice.readableTag) is loading...")
-            case .initializing(let progress):
+                Text("\(machoViewState.selectedMachoPortion.title) is loading...")
+            case .initializing:
+                //TODO:
                 HStack(alignment: .center, spacing: 0) {
                     VStack(alignment: .center, spacing: 0) {
                         ProgressView()
-                        Text(String(format: "Initializing... (%.2f %%)", progress * 100))
+                        Text(String(format: "Initializing... (%.2f %%)", 0.5 * 100))
                     }
                 }
-            case .translating(let progress):
+            case .translating:
+                //TODO:
                 HStack(alignment: .center, spacing: 0) {
                     VStack(alignment: .center, spacing: 0) {
                         ProgressView()
-                        Text(String(format: "Translating... (%.2f %%)", progress * 100))
+                        Text(String(format: "Initializing... (%.2f %%)", 0.5 * 100))
                     }
                 }
-            case .translated(let translated):
-                self.contentBuilder(translated)
+            case .translated(_, let t):
+                if let t = t as? TranslationGroups {
+                    GroupTranslationView(translationGroups: t)
+                } else if let t = t as? InstructionBank {
+                    InstructionTranslationView(instructionBank: t)
+                }
             }
         }
-        .frame(width: 600)
-    }
-    
-}
-
-struct TranslationView: View {
-    
-    @Binding var machoViewState: MachoViewState
-    
-    var body: some View {
-        if let groupTranslatedSlice = machoViewState.selectedMachoSlice as? GroupTranslatedMachoSlice {
-            AsyncView(translatedSlice: groupTranslatedSlice) { transtionGroups in
-                GroupTranslationView(translationGroups: transtionGroups, machoViewState: $machoViewState)
-            }
-        } else if let instructionTranslatedSlice = machoViewState.selectedMachoSlice as? InstructionSection {
-            AsyncView(translatedSlice: instructionTranslatedSlice) { instructionBank in
-                InstructionTranslationView(instructionBank: instructionBank, machoViewState: $machoViewState)
-            }
-        }
+        .background(.white)
     }
     
 }

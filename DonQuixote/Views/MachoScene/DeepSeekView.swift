@@ -10,7 +10,7 @@ import Combine
 
 struct DeepSeekView: View {
     
-    @Binding var machoState: MachoViewState
+    @EnvironmentObject var machoViewState: MachoViewState
     
     @ObservedObject var deepSeek = DeepSeek.shared
     @ObservedObject var streamDataHandler: StreamDataHandler = StreamDataHandler()
@@ -125,10 +125,10 @@ struct DeepSeekView: View {
             }
             
             HStack(spacing: 4) {
-                TextField("Input your question to DeepSeek", text: $machoState.questionToDeepSeek)
+                TextField("Input your question to DeepSeek", text: $machoViewState.questionToDeepSeek)
                 Button("Ask") {
                     Task {
-                        self.deepSeek.streamDeepSeek(question: machoState.questionToDeepSeek, streamDataHandler: self.streamDataHandler)
+                        self.deepSeek.streamDeepSeek(question: machoViewState.questionToDeepSeek, streamDataHandler: self.streamDataHandler)
                     }
                 }
                 .disabled(askButtonDisable)

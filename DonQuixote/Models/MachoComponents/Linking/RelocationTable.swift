@@ -12,9 +12,8 @@ struct RelocationInfo {
     let sectionName: String
 }
 
-class RelocationTable: GroupTranslatedMachoSlice {
+class RelocationTable: MachoPortion, @unchecked Sendable {
     
-    var relocationEntries: [RelocationEntry] = []
     let relocationInfos: [RelocationInfo]
     
     init(data: Data, relocationInfos: [RelocationInfo]) {
@@ -22,17 +21,22 @@ class RelocationTable: GroupTranslatedMachoSlice {
         super.init(data, title: "Relocation Table", subTitle: nil)
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
-        var translationGroups: [TranslationGroup] = []
+    override func initialize() async -> AsyncInitializeResult {
+        var relocationEntries: [RelocationEntry] = []
         var dataShifter = DataShifter(self.data)
         for relocationInfo in relocationInfos {
             for _ in 0..<relocationInfo.numberOfEntries {
                 let entryData = dataShifter.shift(.rawNumber(RelocationEntry.entrySize))
                 let entry = RelocationEntry(with: entryData, sectionName: relocationInfo.sectionName)
-                translationGroups.append(entry.translationGroup)
+                relocationEntries.append(entry)
             }
         }
-        return translationGroups
+        return relocationEntries
+    }
+    
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
+        let initializeResult = initializeResult as! [RelocationEntry]
+        return TranslationGroups(initializeResult.map { $0.translationGroup })
     }
     
 }

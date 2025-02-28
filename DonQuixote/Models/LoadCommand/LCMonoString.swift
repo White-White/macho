@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LCMonoString: LoadCommand {
+class LCMonoString: LoadCommand, @unchecked Sendable {
     
     let stringOffset: UInt32
     let stringLength: Int

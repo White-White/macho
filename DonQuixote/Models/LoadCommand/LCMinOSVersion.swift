@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LCMinOSVersion: LoadCommand {
+class LCMinOSVersion: LoadCommand, @unchecked Sendable {
     
     let osVersion: String
     let sdkVersion: String

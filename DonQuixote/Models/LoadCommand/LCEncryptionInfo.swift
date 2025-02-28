@@ -18,7 +18,7 @@ import Foundation
 //                   of 8 bytes */
 //};
 
-class LCEncryptionInfo: LoadCommand {
+class LCEncryptionInfo: LoadCommand, @unchecked Sendable {
     
     let cryptoOffset: UInt32
     let cryptoSize: UInt32

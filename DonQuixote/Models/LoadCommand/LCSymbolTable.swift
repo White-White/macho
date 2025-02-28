@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LCSymbolTable: LoadCommand {
+class LCSymbolTable: LoadCommand, @unchecked Sendable {
     
     let symbolTableOffset: UInt32
     let numberOfSymbolTableEntries: UInt32

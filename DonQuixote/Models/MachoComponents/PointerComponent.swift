@@ -7,11 +7,12 @@
 
 import Foundation
 
-class PointerComponent: GroupTranslatedMachoSlice {
+typealias Pointers = [UInt64]
+
+class PointerComponent: MachoPortion, @unchecked Sendable {
     
     let is64Bit: Bool
     let pointerSize: Int
-    private(set) var pointerValues: [UInt64] = []
     
     init(_ data: Data, is64Bit: Bool, title: String) {
         self.is64Bit = is64Bit
@@ -22,20 +23,23 @@ class PointerComponent: GroupTranslatedMachoSlice {
         super.init(data, title: title, subTitle: nil)
     }
     
-    override func initialize() async {
+    override func initialize() async -> AsyncInitializeResult {
+        var pointers: Pointers = []
         var dataShifter = DataShifter(data)
         while dataShifter.shiftable {
             let pointerData = dataShifter.shift(.rawNumber(self.pointerSize))
-            self.pointerValues.append(self.is64Bit ? pointerData.UInt64 : UInt64(pointerData.UInt32))
+            pointers.append(self.is64Bit ? pointerData.UInt64 : UInt64(pointerData.UInt32))
         }
+        return pointers
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
+        let initializeResult = initializeResult as! Pointers
         let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
-        for (index, pointerValue) in self.pointerValues.enumerated() {
+        for (index, pointerValue) in initializeResult.enumerated() {
             await self.addTranslation(for: pointerValue, index: index, to: translationGroup)
         }
-        return [translationGroup]
+        return TranslationGroups([translationGroup])
     }
     
     func addTranslation(for pointerValue: UInt64, index: Int, to translationGroup: TranslationGroup) async {
@@ -44,7 +48,7 @@ class PointerComponent: GroupTranslatedMachoSlice {
     
 }
 
-class LiteralPointerComponent: PointerComponent {
+class LiteralPointerComponent: PointerComponent, @unchecked Sendable {
     
     let allCStringSections: [CStringSection]
     
@@ -56,7 +60,7 @@ class LiteralPointerComponent: PointerComponent {
     override func addTranslation(for pointerValue: UInt64, index: Int, to translationGroup: TranslationGroup) async {
         var searchedString: String?
         for cStringSection in allCStringSections {
-            if let finded = await cStringSection.findString(virtualAddress: pointerValue) {
+            if let finded = try? await cStringSection.findString(virtualAddress: pointerValue) {
                 searchedString = finded
                 break
             }
@@ -71,7 +75,7 @@ class LiteralPointerComponent: PointerComponent {
     
 }
 
-class SymbolPointerComponent: PointerComponent {
+class SymbolPointerComponent: PointerComponent, @unchecked Sendable {
 
     let sectionType: SectionType
     let startIndexInIndirectSymbolTable: Int

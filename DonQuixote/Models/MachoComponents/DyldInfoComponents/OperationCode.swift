@@ -12,7 +12,7 @@ enum LEBType {
     case unsigned
 }
 
-protocol OperationCodeMetadataProtocol {
+protocol OperationCodeMetadataProtocol: Sendable {
     init(operationCodeValue: UInt8, immediateValue: UInt8)
     func operationReadable() -> String
     func immediateReadable() -> String

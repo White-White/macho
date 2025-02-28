@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LCLinkerOption: LoadCommand {
+class LCLinkerOption: LoadCommand, @unchecked Sendable {
     
     let numberOfOptions: UInt32
     let optionDataLength: Int

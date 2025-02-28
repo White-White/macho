@@ -31,7 +31,7 @@ struct IndirectSymbolTableEntry {
                                                 translationType: .uint32,
                                                 extraDefinition: "Local Symbol", extraHumanReadable: "Local. Abosulte: \(self.isSymbolAbsolute)")
             } else {
-                let symbolName = await self.symbolTable?.findSymbol(atIndex: Int(self.symbolTableIndex), callerTag: "IndirSymTable entry").symbolName
+                let symbolName = try? await self.symbolTable?.findSymbol(atIndex: Int(self.symbolTableIndex), callerTag: "IndirSymTable entry").symbolName
                 translationGroup.addTranslation(definition: "Symbol Table Index", humanReadable: "\(self.symbolTableIndex)",
                                                 translationType: .uint32,
                                                 extraDefinition: "Referrenced Symbol", extraHumanReadable: symbolName)

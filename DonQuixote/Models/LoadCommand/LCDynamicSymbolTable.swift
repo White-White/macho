@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LCDynamicSymbolTable: LoadCommand {
+class LCDynamicSymbolTable: LoadCommand, @unchecked Sendable {
     let ilocalsym: UInt32       /* index to local symbols */
     let nlocalsym: UInt32       /* number of local symbols */
     

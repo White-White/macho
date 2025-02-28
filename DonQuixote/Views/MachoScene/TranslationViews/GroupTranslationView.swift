@@ -10,27 +10,28 @@ import SwiftUI
 
 struct GroupTranslationView: View {
     
-    let translationGroups: [TranslationGroup]
-    @Binding var machoViewState: MachoViewState
+    let translationGroups: TranslationGroups
+    
+    @EnvironmentObject var machoViewState: MachoViewState
     
     var body: some View {
         ScrollViewReader { scrollViewProxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    ForEach(translationGroups) { translationGroup in
+                    ForEach(translationGroups.translationGroups) { translationGroup in
                         ForEach(translationGroup.translations) { translation in
                             self.singleTranslationView(for: translation)
                                 .onTapGesture {
-                                    machoViewState.update(coloredDataRange: translationGroup.dataRangeInMacho)
-                                    machoViewState.update(selectedDataRange: translation.metaInfo.dataRangeInMacho)
                                     machoViewState.selectedTranslationMetaInfo = translation.metaInfo
                                 }
                         }
                     }
                 }
             }
-            .onChange(of: machoViewState.selectedTranslationMetaInfo) { newValue in
-                scrollViewProxy.scrollTo(newValue.id)
+            .onChange(of: machoViewState.selectedTranslationMetaInfo, initial: false) { oldValue, newValue in
+                withAnimation(.easeInOut(duration: 0.75)) {
+                    scrollViewProxy.scrollTo(newValue.id, anchor: .center)
+                }
             }
         }
     }

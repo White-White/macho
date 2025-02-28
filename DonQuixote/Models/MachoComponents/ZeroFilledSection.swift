@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ZeroFilledSection: GroupTranslatedMachoSlice {
+class ZeroFilledSection: MachoPortion, @unchecked Sendable {
     
     let runtimeSize: Int
     
@@ -16,12 +16,16 @@ class ZeroFilledSection: GroupTranslatedMachoSlice {
         super.init(Data(), /* dummy data */ title: title, subTitle: nil)
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
+    override func initialize() async -> AsyncInitializeResult {
+        return Void()
+    }
+    
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
         let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
         translationGroup.addTranslation(definition: "Zero Filled Section",
                                         humanReadable: "This section has no data in the macho file.\nIts in memory size is \(runtimeSize.hex)",
                                         translationType: .rawData(0))
-        return [translationGroup]
+        return TranslationGroups([translationGroup])
     }
     
 }

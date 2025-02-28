@@ -108,11 +108,16 @@ struct TranslationMetaInfo: Identifiable, Equatable {
     
     let dataIndexInMacho: Int
     let type: TranslationType
-    
-    var id: Range<UInt64> { dataRangeInMacho.rawRange }
     var bytesCount: Int { type.bytesCount }
-    var dataRangeInMacho: HexFiendDataRange { HexFiendDataRange(lowerBound: UInt64(dataIndexInMacho),
-                                                                length: UInt64(bytesCount)) }
+    
+    var dataRangeInMacho: Range<UInt64> { UInt64(dataIndexInMacho)..<UInt64(dataIndexInMacho+bytesCount) }
+    var id: Range<UInt64> { dataRangeInMacho }
+    
+    let humanReadable: String
+    
+    func generateQuestion() -> String {
+        return "In a macho binary, what's the definition of \(humanReadable)"
+    }
     
 }
 
@@ -135,7 +140,7 @@ struct Translation: Identifiable {
          extraDefinition: String? = nil,
          extraHumanReadable: String? = nil,
          error: String? = nil) {
-        self.metaInfo = TranslationMetaInfo(dataIndexInMacho: dataIndexInMacho, type: translationType)
+        self.metaInfo = TranslationMetaInfo(dataIndexInMacho: dataIndexInMacho, type: translationType, humanReadable: humanReadable)
         self.definition = definition
         self.humanReadable = humanReadable
         self.extraDefinition = extraDefinition

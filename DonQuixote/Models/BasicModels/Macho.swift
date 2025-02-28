@@ -19,7 +19,7 @@ struct Macho: File {
     let machoHeader: MachoHeader
     let is64Bit: Bool
     
-    let allSlices: [MachoSlice]
+    let allPortions: [MachoPortion]
     
     init(with location: FileLocation) throws {
         let fileHandle = try FileHandle(location)
@@ -55,7 +55,7 @@ struct Macho: File {
         var lcLinkedITDataCommands: [LCLinkedITData] = []
         var lcDyldInfo: LCDyldInfo?
         
-        var sections: [MachoSlice] = []
+        var sections: [MachoPortion] = []
         var allCStrngSections: [CStringSection] = []
         var machoSectionHeaders: [SectionHeader] = []
         var relocationTables: [RelocationTable] = []
@@ -64,8 +64,8 @@ struct Macho: File {
         var symbolTable: SymbolTable?
         var indirectSymbolTable: IndirectSymbolTable?
         
-        var linkedITSections: [MachoSlice] = []
-        var dyldInfoSections: [MachoSlice] = []
+        var linkedITSections: [MachoPortion] = []
+        var dyldInfoSections: [MachoPortion] = []
         
         loadCommands = LoadCommand.loadCommands(from: machoData, machoHeader: machoHeader, onLCSegment: {lcSegment in
             lcSegmentCommands.append(lcSegment)
@@ -114,18 +114,18 @@ struct Macho: File {
             dyldInfoSections = lcDyldInfo.dyldInfoSections(machoData: machoData, machoHeader: machoHeader)
         }
         
-        var allSlices: [MachoSlice] = [machoHeader]
-        allSlices.append(contentsOf: loadCommands)
-        allSlices.append(contentsOf: sections)
-        allSlices.append(contentsOf: relocationTables)
-        allSlices.append(contentsOf: linkedITSections)
-        allSlices.append(contentsOf: dyldInfoSections)
+        var allPortions: [MachoPortion] = [machoHeader]
+        allPortions.append(contentsOf: loadCommands)
+        allPortions.append(contentsOf: sections)
+        allPortions.append(contentsOf: relocationTables)
+        allPortions.append(contentsOf: linkedITSections)
+        allPortions.append(contentsOf: dyldInfoSections)
         
-        if let symbolTable { allSlices.append(symbolTable) }
-        if let indirectSymbolTable { allSlices.append(indirectSymbolTable) }
-        if let stringTable { allSlices.append(stringTable) }
+        if let symbolTable { allPortions.append(symbolTable) }
+        if let indirectSymbolTable { allPortions.append(indirectSymbolTable) }
+        if let stringTable { allPortions.append(stringTable) }
         
-        self.allSlices = allSlices
+        self.allPortions = allPortions
         
         tick.tock("Macho Init Completed")
     }
@@ -138,7 +138,7 @@ extension Macho {
                               indirectSymbolTable: IndirectSymbolTable?,
                               machoData: Data,
                               machoHeader: MachoHeader,
-                              sectionHeader: SectionHeader) -> MachoSlice {
+                              sectionHeader: SectionHeader) -> MachoPortion {
         
         let is64Bit = machoHeader.is64Bit
         let title = sectionHeader.segment + "," + sectionHeader.section

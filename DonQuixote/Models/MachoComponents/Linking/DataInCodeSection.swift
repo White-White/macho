@@ -57,22 +57,23 @@ struct DataInCodeEntry {
     
 }
 
-class DataInCodeSection: GroupTranslatedMachoSlice {
+class DataInCodeSection: MachoPortion, @unchecked Sendable {
     
-    private var dataInCodeEntries: [DataInCodeEntry] = []
-    
-    override func initialize() async {
+    override func initialize() async -> AsyncInitializeResult {
+        var dataInCodeEntries: [DataInCodeEntry] = []
         let modelSize = DataInCodeEntry.EntrySize
         let numberOfModels = self.dataSize/modelSize
         for index in 0..<numberOfModels {
             let data = self.data.subSequence(from: index * modelSize, count: modelSize)
             let entry = DataInCodeEntry(with: data)
-            self.dataInCodeEntries.append(entry)
+            dataInCodeEntries.append(entry)
         }
+        return dataInCodeEntries
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
-        self.dataInCodeEntries.map { $0.translationGroup }
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
+        let initializeResult = initializeResult as! [DataInCodeEntry]
+        return TranslationGroups(initializeResult.map { $0.translationGroup })
     }
     
 }

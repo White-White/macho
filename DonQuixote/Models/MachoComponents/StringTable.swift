@@ -7,7 +7,7 @@
 
 import Foundation
 
-class StringTable: StringSection {
+class StringTable: StringSection, @unchecked Sendable {
     
     init(stringTableOffset: Int, sizeOfStringTable: Int, machoData: Data) {
         let stringTableData = machoData.subSequence(from: stringTableOffset, count: sizeOfStringTable)

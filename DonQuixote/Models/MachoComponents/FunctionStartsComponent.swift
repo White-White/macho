@@ -16,16 +16,18 @@ struct FunctionStart {
 // a great description for function start section data format
 // https://stackoverflow.com/questions/9602438/mach-o-file-lc-function-starts-load-command
 
-class FunctionStartsSection: GroupTranslatedMachoSlice {
+class FunctionStartsSection: MachoPortion, @unchecked Sendable {
     
     let symbolTable: SymbolTable?
     let textSegmentVirtualAddress: Swift.UInt64
-    let functionStarts: [FunctionStart]
     
     init(_ data: Data, title: String, textSegmentVirtualAddress: UInt64, symbolTable: SymbolTable?) {
         self.symbolTable = symbolTable
         self.textSegmentVirtualAddress = textSegmentVirtualAddress
-        
+        super.init(data, title: title, subTitle: nil)
+    }
+    
+    override func initialize() async -> AsyncInitializeResult {
         // ref: https://opensource.apple.com/source/ld64/ld64-127.2/src/other/dyldinfo.cpp in function printFunctionStartsInfo
         // The code below decode (unsigned) LEB128 data into integers
         var functionStarts: [FunctionStart] = []
@@ -48,17 +50,18 @@ class FunctionStartsSection: GroupTranslatedMachoSlice {
                 }
             } while (more)
         }
-        self.functionStarts = functionStarts
-        super.init(data, title: title, subTitle: nil)
+        return functionStarts
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
+        let initializeResult = initializeResult as! [FunctionStart]
+        
         let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
-        for functionStart in self.functionStarts {
+        for functionStart in initializeResult {
             var symbolName: String = ""
             let functionVirtualAddress = functionStart.address + textSegmentVirtualAddress
             
-            await self.symbolTable?.findSymbol(byVirtualAddress: functionVirtualAddress, callerTag: self.title)?.forEach({ symbolTableEntry in
+            try? await self.symbolTable?.findSymbol(byVirtualAddress: functionVirtualAddress, callerTag: self.title)?.forEach({ symbolTableEntry in
                 guard symbolTableEntry.symbolType == .section else { return }
                 symbolName += symbolTableEntry.symbolName
             })
@@ -70,7 +73,7 @@ class FunctionStartsSection: GroupTranslatedMachoSlice {
                                             extraHumanReadable: symbolName)
             
         }
-        return [translationGroup]
+        return TranslationGroups([translationGroup])
     }
     
 }

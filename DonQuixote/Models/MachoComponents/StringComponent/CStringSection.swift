@@ -7,7 +7,7 @@
 
 import Foundation
 
-class CStringSection: StringSection {
+class CStringSection: StringSection, @unchecked Sendable {
     
     private let baseVirtualAddress: UInt64
     
@@ -16,12 +16,12 @@ class CStringSection: StringSection {
         super.init(encoding: .utf8, data: data, title: title, subTitle: subTitle)
     }
     
-    func findString(virtualAddress: Swift.UInt64) async -> String? {
+    func findString(virtualAddress: Swift.UInt64) async throws -> String? {
         let virtualAddressBegin = self.baseVirtualAddress
         let virtualAddressEnd = virtualAddressBegin + UInt64(dataSize)
         if virtualAddress < virtualAddressBegin || virtualAddress >= virtualAddressEnd { return nil }
         let dataOffset = Int(virtualAddress - self.baseVirtualAddress)
-        return await super.findString(atDataOffset: dataOffset)
+        return try await super.findString(atDataOffset: dataOffset)
     }
     
 }

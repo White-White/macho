@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol SwiftMetadata {
+protocol SwiftMetadata: Sendable {
     static var dataSize: Int { get }
     init(data: Data)
     var translationGroup: TranslationGroup { get }
@@ -98,20 +98,20 @@ struct SwiftMetadataContainer<MetaData: SwiftMetadata> {
     
 }
 
-class SwiftMetadataSection<MetaData: SwiftMetadata>: GroupTranslatedMachoSlice {
-    
-    private let swiftMetadataContainers: [SwiftMetadataContainer<MetaData>]
+class SwiftMetadataSection<MetaData: SwiftMetadata>: MachoPortion, @unchecked Sendable {
     
     let virtualAddress: UInt64
     
     init(_ data: Data, title: String, virtualAddress: UInt64) {
-        
         self.virtualAddress = virtualAddress
-        
+        super.init(data, title: title, subTitle: nil)
+    }
+    
+    override func initialize() async -> AsyncInitializeResult {
         guard data.count % 4 == 0 else { fatalError() }
 //        let offsetInComponent = self.offsetInMacho
 //        let numberOfOffsets = self.data.count / 4
-        self.swiftMetadataContainers = []
+        return [SwiftMetadataContainer<MetaData>]()
         
 //        (0..<numberOfOffsets).map { index in
 //            let offsetOfCurrentValue = index * 4
@@ -121,11 +121,11 @@ class SwiftMetadataSection<MetaData: SwiftMetadata>: GroupTranslatedMachoSlice {
 //                                                    targetOffsetInMacho: targetOffsetInMacho,
 //                                                    associatedMetadata: self.swiftMetadata(at: targetOffsetInMacho))
 //        }
-        super.init(data, title: title, subTitle: nil)
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
-        return []
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
+        let initializeResult = initializeResult as! [SwiftMetadataContainer<MetaData>]
+        return TranslationGroups([])
     }
     
 //    func swiftMetadata(at targetOffsetInMacho: Int) -> MetaData? {

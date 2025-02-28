@@ -26,39 +26,29 @@ struct StringContent {
     let demangled: String?
 }
 
-actor StringContainer {
+struct StringContainer {
         
     private let data: Data
     private let encoding: String.Encoding
     private let shouldDemangle: Bool
     
-    private var _rawStrings: [RawString]?
-    var rawStrings: [RawString] {
-        get {
-            if let _rawStrings { return _rawStrings }
-            let ret = StringContainer.generateRawStrings(with: self.data, encoding: self.encoding)
-            _rawStrings = ret
-            return ret
-        }
-    }
-    
-    private var _rawStringQuickIndexByOffset: [Int:Int]?
-    private var rawStringQuickIndexByOffset: [Int:Int] {
-        get {
-            if let _rawStringQuickIndexByOffset { return _rawStringQuickIndexByOffset }
-            var ret: [Int:Int] = [:]
-            for (index, rawString) in self.rawStrings.enumerated() {
-                ret[rawString.offset] = index
-            }
-            _rawStringQuickIndexByOffset = ret
-            return ret
-        }
-    }
+    var numberOfStrings: Int { self.rawStrings.count }
+    let rawStrings: [RawString]
+    private let rawStringQuickIndexByOffset: [Int:Int]
     
     init(data: Data, encoding: String.Encoding, shouldDemangle: Bool) {
         self.data = data
         self.encoding = encoding
         self.shouldDemangle = shouldDemangle
+        
+        let rawStrings = StringContainer.generateRawStrings(with: data, encoding: encoding)
+        var rawStringQuickIndexByOffset: [Int:Int] = [:]
+        for (index, rawString) in rawStrings.enumerated() {
+            rawStringQuickIndexByOffset[rawString.offset] = index
+        }
+        
+        self.rawStrings = rawStrings
+        self.rawStringQuickIndexByOffset = rawStringQuickIndexByOffset
     }
     
     private static func generateRawStrings(with data: Data, encoding: String.Encoding) -> [RawString] {
@@ -108,11 +98,6 @@ actor StringContainer {
         }
         
         return rawStrings
-    }
- 
-    // public
-    var numberOfStrings: Int {
-        self.rawStrings.count
     }
     
     func stringContent(for rawString: RawString) -> StringContent {

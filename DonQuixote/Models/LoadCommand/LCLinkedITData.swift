@@ -14,7 +14,7 @@ import Foundation
  LC_DYLD_EXPORTS_TRIE, or
  LC_DYLD_CHAINED_FIXUPS. */
 
-class LCLinkedITData: LoadCommand {
+class LCLinkedITData: LoadCommand, @unchecked Sendable {
     
     let containedDataFileOffset: UInt32
     let containedDataSize: UInt32
@@ -53,7 +53,7 @@ class LCLinkedITData: LoadCommand {
         translationGroup.addTranslation(definition: "Size", humanReadable: self.containedDataSize.hex, translationType: .uint32)
     }
     
-    func linkedITSection(from machoData:Data, machoHeader: MachoHeader, textSegmentLoadCommand: LCSegment?, symbolTable: SymbolTable?) -> MachoSlice {
+    func linkedITSection(from machoData:Data, machoHeader: MachoHeader, textSegmentLoadCommand: LCSegment?, symbolTable: SymbolTable?) -> MachoPortion {
         let is64Bit = machoHeader.is64Bit
         let data = machoData.subSequence(from: Int(self.containedDataFileOffset), count: Int(self.containedDataSize), allowZeroLength: true)
         switch self.type {

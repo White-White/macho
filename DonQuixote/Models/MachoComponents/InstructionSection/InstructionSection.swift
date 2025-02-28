@@ -18,13 +18,13 @@ struct InstructionTranslation: Identifiable {
     let instruction: String
     
     init(dataIndexInMacho: Int, instructionSize: UInt16, instruction: String) {
-        self.metaInfo = TranslationMetaInfo(dataIndexInMacho: dataIndexInMacho, type: .code(Int(instructionSize)))
+        self.metaInfo = TranslationMetaInfo(dataIndexInMacho: dataIndexInMacho, type: .code(Int(instructionSize)), humanReadable: instruction)
         self.instruction = instruction
     }
     
 }
 
-final class InstructionBank: @unchecked Sendable {
+final class InstructionBank: @unchecked Sendable, SearchableTranslationContainer {
     
     let numberOfInstructions: Int
     private let bank: CapStoneInstructionBank
@@ -48,10 +48,24 @@ final class InstructionBank: @unchecked Sendable {
         bank.searchIndexForInstruction(with: targetDataIndex)
     }
     
+    func searchForTranslationMetaInfo(at dataIndexInMacho: UInt64) async -> TranslationSearchResult? {
+        let searchedIndex = self.searchIndexForInstruction(with: dataIndexInMacho)
+        guard let instruction = self.instructionTranslation(at: searchedIndex) else { return nil }
+        
+        return TranslationSearchResult(translationMetaInfo: instruction.metaInfo)
+    }
+    
+    func firstTranslationMetaInfo() -> TranslationSearchResult? {
+        if let instructionTranslation = self.instructionTranslation(at: 0) {
+            return TranslationSearchResult(translationMetaInfo: instructionTranslation.metaInfo)
+        }
+        return nil
+    }
+    
 }
 
 
-class InstructionSection: MachoTranslatedSlice<InstructionBank> {
+class InstructionSection: MachoPortion, @unchecked Sendable {
 
     let capStoneArchType: CapStoneArchType
     let virtualAddress: UInt64
@@ -77,9 +91,14 @@ class InstructionSection: MachoTranslatedSlice<InstructionBank> {
         super.init(data, title: title, subTitle: nil)
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> InstructionBank {
+    override func initialize() async -> AsyncInitializeResult {
+        return Void()
+    }
+    
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
         let bank = CapStoneHelper.capStoneInstructionBank(from: self.data, arch: self.capStoneArchType, codeStartAddress: virtualAddress) { progress in
-            progressNotifier(progress)
+            //TODO: progress
+//            progressNotifier(progress)
         }
         if let _ = bank.error {
             //TODO: handle error
@@ -89,25 +108,6 @@ class InstructionSection: MachoTranslatedSlice<InstructionBank> {
         bank.instructionSectionOffsetInMacho = UInt64(self.offsetInMacho)
         
         return InstructionBank(bank)
-    }
-    
-    override func searchForTranslationMetaInfo(at dataIndexInMacho: UInt64) async -> MachoSlice.SearchResult? {
-        guard let instructionBank = await self.untilTranslated(source: "Translation search") else { return nil }
-        
-        let searchedIndex = instructionBank.searchIndexForInstruction(with: dataIndexInMacho)
-        guard let instruction = instructionBank.instructionTranslation(at: searchedIndex) else { return nil }
-        
-        return SearchResult(enclosedDataRange: self.dataRangeInMacho,
-                            translationMetaInfo: instruction.metaInfo)
-    }
-    
-    override func searchForFirstTranslationMetaInfo() -> MachoSlice.SearchResult? {
-        if case .translated(let instructionBank) = self.loadingStatus,
-           let instructionTranslation = instructionBank.instructionTranslation(at: 0) {
-            return SearchResult(enclosedDataRange: HexFiendDataRange(lowerBound: UInt64(self.offsetInMacho), length: UInt64(self.dataSize)),
-                                translationMetaInfo: instructionTranslation.metaInfo)
-        }
-        return nil
     }
     
 }

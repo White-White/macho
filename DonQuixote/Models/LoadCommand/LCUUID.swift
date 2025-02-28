@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LCUUID: LoadCommand {
+class LCUUID: LoadCommand, @unchecked Sendable {
     
     let uuid: UUID
     

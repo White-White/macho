@@ -184,7 +184,7 @@ enum LoadCommandType: UInt32 {
     }
 }
 
-class LoadCommand: GroupTranslatedMachoSlice {
+class LoadCommand: MachoPortion, @unchecked Sendable {
     
     let type: LoadCommandType
     
@@ -193,14 +193,18 @@ class LoadCommand: GroupTranslatedMachoSlice {
         super.init(data, title: title ?? type.name, subTitle: subTitle)
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
+    override func initialize() async -> any AsyncInitializeResult {
+        return Void()
+    }
+    
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
         let translationGroup = TranslationGroup(dataStartIndex: self.offsetInMacho)
         translationGroup.addTranslation(definition: "Load Command Type", humanReadable: type.name, translationType: .numberEnum32Bit)
         translationGroup.addTranslation(definition: "Load Command Size", humanReadable: data.count.hex, translationType: .uint32)
         self.addCommandTranslation(to: translationGroup)
-        return [translationGroup]
+        return TranslationGroups([translationGroup])
     }
-
+    
     func addCommandTranslation(to translationGroup: TranslationGroup) {
         
     }

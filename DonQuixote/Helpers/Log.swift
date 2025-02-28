@@ -21,6 +21,11 @@ class Log {
         return printAndReturn("❌ " + string)
     }
     
+    @discardableResult
+    static func info(_ string: String) -> String {
+        return printAndReturn("📖 " + string)
+    }
+    
     private static func printAndReturn(_ s: String) -> String {
         print(s); return s
     }

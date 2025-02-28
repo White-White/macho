@@ -33,7 +33,7 @@ struct VMProtection {
     }
 }
 
-class LCSegment: LoadCommand {
+class LCSegment: LoadCommand, @unchecked Sendable {
     
     let is64Bit: Bool
     let segmentName: String
@@ -84,10 +84,10 @@ class LCSegment: LoadCommand {
         translationGroup.addTranslation(definition: "Flags", humanReadable: LCSegment.flags(for: self.flags), translationType: .flags(4))
     }
     
-    override func translate(_ progressNotifier: @escaping (Float) -> Void) async -> [TranslationGroup] {
-        let loadCommandTranslationGroups = await super.translate(progressNotifier)
+    override func translate(initializeResult: AsyncInitializeResult) async -> AsyncTranslationResult {
+        let loadCommandTranslationGroups = (await super.translate(initializeResult: initializeResult)) as! TranslationGroups
         let sectionHeaderTranslationGroups = (self.sectionHeaders.map { $0.translationGroup })
-        return loadCommandTranslationGroups + sectionHeaderTranslationGroups
+        return TranslationGroups(loadCommandTranslationGroups.translationGroups + sectionHeaderTranslationGroups)
     }
     
     func relocationTable(machoData: Data, machoHeader: MachoHeader) -> RelocationTable? {

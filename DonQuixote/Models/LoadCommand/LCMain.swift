@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LCMain: LoadCommand {
+class LCMain: LoadCommand, @unchecked Sendable {
     
     let entryOffset: UInt64
     let stackSize: UInt64

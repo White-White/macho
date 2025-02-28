@@ -67,7 +67,7 @@ struct LCBuildTool {
     let version: String
 }
 
-class LCBuildVersion: LoadCommand {
+class LCBuildVersion: LoadCommand, @unchecked Sendable {
     
     let platform: BuildPlatform?
     let minOSVersion: String

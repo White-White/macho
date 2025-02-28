@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LCDylib: LoadCommand {
+class LCDylib: LoadCommand, @unchecked Sendable {
     
     let libPathOffset: UInt32
     let libPathDataCount: Int
